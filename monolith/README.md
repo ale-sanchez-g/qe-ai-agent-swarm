@@ -39,14 +39,21 @@ This tool bridges the gap between natural language test descriptions and executa
 ## Running the MCP Puppet
 1. Ensure you are in the `monolith` directory.
 2. Run the puppet with a URL and natural language test description:
+
+- HTML website with JavaScript
    ```sh
    python main.py https://devops1.com.au/ "As a user I want to navigate using the menu like click on services then on Anticipate, or Click on Engage, Hover on Accelerators and click on Cloud Acceleration"
    ```
    
-   or
+- React Application
 
    ```sh
    python main.py https://ale-sanchez-g.github.io/featureflags/ "User will test adding numbers like 1+1=2 and 2+3=5 and validate the results from the calculator are successful"
+   ```
+- From
+
+   ``` sh
+   python main.py https://templates.snapforms.com.au/form/2FnoQUKZdA/ "I want to be able to fill my Personal information form and submit"
    ```
 
 ## How It Works
