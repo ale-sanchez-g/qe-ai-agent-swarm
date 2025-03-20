@@ -8,43 +8,39 @@ QE-AI-Agent-Swarm revolutionises software testing by combining Large Language Mo
 
 Our development follows a progressive approach through Multiple Agent Capabilities (MAC) levels:
 
-- **MAC1**: Monolithic agent architecture ✅
+- **MAC1**: [Monolithic agent architecture](/monolith/README.md) ✅
 - **MAC2**: Distributed agents with sequential execution
 - **MAC3**: Full swarm intelligence with collaborative agents
 
 ## Features & Roadmap
 
 ### Test Planner
-- 🔄 **MAC1**: Create simple test plans from web page analysis
+- ✅ **MAC1**: Create simple test plans from web page analysis
 - 🔄 **MAC2**: Generate multiple test plans based on positive/negative scenario policies
 - 🔄 **MAC3**: Support multiple test types (Visual, Accessibility, Security)
 
 ### Test Executor
-- 🔄 Implementation in progress
+- ✅ **MAC1**: Basic test execution capabilities
+- 🔄 **MAC2**: Advanced scenario handling and error recovery
 
 ### Reporter
-- 🔄 Implementation in progress
+- ✅ **MAC1**: Basic test result reporting
+- 🔄 **MAC2**: Enhanced analytics and visualization
 
 ### Defect Manager
-- 🔄 Implementation in progress
+- ✅ **MAC1**: Defect identification and classification
+- 🔄 **MAC2**: Automated triage and prioritization
 
 ### Translator
-- 🔄 BDD to AI model flow conversion
+- 🔄 **MAC2**: BDD to AI model flow conversion
+- 🔄 **MAC3**: Bidirectional translation between test formats
 
 ## Technical Stack
 
 ### Core Technologies
-- **Python**: Primary development language for LLM interactions
-- **Playwright**: Browser automation for test execution
-- **Anthropic MCP**: LLM and Tool interactions
-- **React**: User interface
-- **RabbitMQ**: Message broker for distributed workload management
-- **Docker**: Containerization for deployment
-
-### Database Options
-- MongoDB (document store)
-- PostgreSQL (relational database)
-- Final decision pending
+- **Python**: Primary development language for LLM interactions and agent orchestration
+- **Playwright**: Browser automation for test execution and UI interaction using [Playwright-Service](https://github.com/ale-sanchez-g/playwright-service)
+- **Anthropic Claude**: LLM for reasoning and test planning through MCP
 
 ## Architecture
 
@@ -52,19 +48,8 @@ QE-AI-Agent-Swarm evolves through three distinct architectural phases:
 
 1. **Monolithic (MAC1)**:
    - Single agent handling all testing responsibilities
-   - Direct integration with Anthropic MCP
+   - Direct integration with Anthropic Claude
    - Simple workflow execution
-
-2. **Distributed (MAC2)**:
-   - Multiple specialized agents
-   - Sequential test execution
-   - Message-based coordination
-
-3. **Swarm Intelligence (MAC3)**:
-   - Collaborative agent networks
-   - Parallel test execution
-   - Emergent testing strategies
-   - Self-optimizing resource allocation
 
 ## Getting Started
 
@@ -72,7 +57,8 @@ QE-AI-Agent-Swarm evolves through three distinct architectural phases:
 
 ## Contributing
 
-We welcome contributions to the QE-AI-Agent-Swarm project. Please refer to our contribution guidelines for more information.
+We welcome contributions to the QE-AI-Agent-Swarm project.
+
 
 ## Sponsors
 
