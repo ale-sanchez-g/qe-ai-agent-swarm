@@ -1,7 +1,7 @@
 {
   "url": "https://ale-sanchez-g.github.io/featureflags/",
   "test_plan": {
-    "description": "Test basic calculator addition functionality",
+    "description": "Validate basic mathematical calculations on the Classic Calculator",
     "steps": [
       {
         "action": "navigate",
@@ -25,7 +25,8 @@
       },
       {
         "action": "check",
-        "selector": ".display"
+        "selector": ".result",
+        "value": "2"
       },
       {
         "action": "click",
@@ -33,11 +34,111 @@
       },
       {
         "action": "click",
+        "selector": "button:has-text('3')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('-')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('1')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('=')"
+      },
+      {
+        "action": "check",
+        "selector": ".result",
+        "value": "2"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('C')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('4')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('*')"
+      },
+      {
+        "action": "click",
         "selector": "button:has-text('2')"
       },
       {
         "action": "click",
+        "selector": "button:has-text('=')"
+      },
+      {
+        "action": "check",
+        "selector": ".result",
+        "value": "8"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('C')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('8')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('/')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('2')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('=')"
+      },
+      {
+        "action": "check",
+        "selector": ".result",
+        "value": "4"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('C')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('5')"
+      },
+      {
+        "action": "click",
         "selector": "button:has-text('+')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('5')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('=')"
+      },
+      {
+        "action": "check",
+        "selector": ".result",
+        "value": "10"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('C')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('9')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('-')"
       },
       {
         "action": "click",
@@ -49,10 +150,8 @@
       },
       {
         "action": "check",
-        "selector": ".display"
-      },
-      {
-        "action": "screenshot"
+        "selector": ".result",
+        "value": "6"
       }
     ]
   }

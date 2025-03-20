@@ -58,4 +58,4 @@ This tool bridges the gap between natural language test descriptions and executa
 6. Test artifacts are saved to the output folder
 
 ## Configuration
-The puppet loads its configuration from the `mcp_agent.config.yaml` file located in the same directory. Make sure to update the configuration file as needed.
+The agent loads its configuration from the `mcp_agent.config.yaml` file located in the same directory. Make sure to update the configuration file as needed.
