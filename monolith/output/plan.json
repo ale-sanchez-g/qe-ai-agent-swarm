@@ -1,0 +1,59 @@
+{
+  "url": "https://ale-sanchez-g.github.io/featureflags/",
+  "test_plan": {
+    "description": "Test basic calculator addition functionality",
+    "steps": [
+      {
+        "action": "navigate",
+        "value": "https://ale-sanchez-g.github.io/featureflags/"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('1')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('+')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('1')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('=')"
+      },
+      {
+        "action": "check",
+        "selector": ".display"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('C')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('2')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('+')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('3')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('=')"
+      },
+      {
+        "action": "check",
+        "selector": ".display"
+      },
+      {
+        "action": "screenshot"
+      }
+    ]
+  }
+}
