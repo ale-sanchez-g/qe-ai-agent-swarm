@@ -47,14 +47,32 @@ This tool bridges the gap between natural language test descriptions and executa
    
 - React Application
 
-   ```sh
-   python main.py https://ale-sanchez-g.github.io/featureflags/ "User will test adding numbers like 1+1=2 and 2+3=5 and validate the results from the calculator are successful"
-   ```
-- From
+```sh
+python main.py https://ale-sanchez-g.github.io/featureflags/ "User will test different mathematical calculations like 1+1=2 and 3-1=2 and check the result of each transaction then take a screenshot of each calculation. Test 5 different calculations, and 3 edge cases"
+```
+- Form
 
-   ``` sh
-   python main.py https://templates.snapforms.com.au/form/2FnoQUKZdA/ "I want to be able to fill my Personal information form and submit"
-   ```
+``` sh
+python main.py https://templates.snapforms.com.au/form/2FnoQUKZdA/ "I want to be able to fill my Personal information form and submit"
+```
+
+- BDD
+
+```sh
+export test="
+Feature: Clasic calculator
+
+Given I am a Classic users 
+When I calculate 1+1 
+Then I can confirm the calculation equates to 2 by validating the results section
+
+NOTES: 
+Ensure to test all calculations types, 
+Run 5 different calculations and 3 edge cases like division by 0
+"
+
+python main.py https://ale-sanchez-g.github.io/featureflags/ $test
+```
 
 ## How It Works
 1. The application connects to the specified website via a Playwright service

@@ -100,6 +100,8 @@ async def generate_test_plan(llm: OpenAIAugmentedLLM, url: str, page_source: str
         with the following requirements:
         {test_description}
         
+        Before you start ensure the description is clear and concise and traslate into a sentece is Given When Then format.
+
         Return ONLY a JSON object with the following structure:
         {{
           "url": "https://devops1.com.au",
@@ -117,6 +119,7 @@ async def generate_test_plan(llm: OpenAIAugmentedLLM, url: str, page_source: str
         
         Don't include anything else in your response - just the JSON.
         IMPORTANT: 
+        - In Validations are required ensure the check action is used with the value as the expected result.
         - Do not deviate from the list of elements provided, if elements are not provided finish the workflow.
         - only return the JSON object with the test plan.
         - Do not include any explanations or additional text.
