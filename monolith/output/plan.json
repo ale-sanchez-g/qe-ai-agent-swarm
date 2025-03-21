@@ -1,7 +1,7 @@
 {
   "url": "https://ale-sanchez-g.github.io/featureflags/",
   "test_plan": {
-    "description": "Validate Classic Calculator functionality by performing various calculations and edge cases",
+    "description": "Test the Classic Calculator functionality by performing various calculations and verifying results",
     "steps": [
       {
         "action": "navigate",
@@ -38,36 +38,11 @@
       },
       {
         "action": "click",
-        "selector": "button:has-text('-')"
-      },
-      {
-        "action": "click",
-        "selector": "button:has-text('4')"
-      },
-      {
-        "action": "click",
-        "selector": "button:has-text('=')"
-      },
-      {
-        "action": "check",
-        "selector": ".display",
-        "value": "5"
-      },
-      {
-        "action": "click",
-        "selector": "button:has-text('C')"
-      },
-      {
-        "action": "click",
-        "selector": "button:has-text('6')"
-      },
-      {
-        "action": "click",
         "selector": "button:has-text('*')"
       },
       {
         "action": "click",
-        "selector": "button:has-text('7')"
+        "selector": "button:has-text('3')"
       },
       {
         "action": "click",
@@ -76,7 +51,7 @@
       {
         "action": "check",
         "selector": ".display",
-        "value": "42"
+        "value": "27"
       },
       {
         "action": "click",
@@ -84,7 +59,7 @@
       },
       {
         "action": "click",
-        "selector": "button:has-text('8')"
+        "selector": "button:has-text('1')"
       },
       {
         "action": "click",
@@ -101,7 +76,7 @@
       {
         "action": "check",
         "selector": ".display",
-        "value": "4"
+        "value": "0.5"
       },
       {
         "action": "click",
@@ -109,15 +84,15 @@
       },
       {
         "action": "click",
-        "selector": "button:has-text('5')"
+        "selector": "button:has-text('9')"
       },
       {
         "action": "click",
-        "selector": "button:has-text('/')"
+        "selector": "button:has-text('-')"
       },
       {
         "action": "click",
-        "selector": "button:has-text('0')"
+        "selector": "button:has-text('3')"
       },
       {
         "action": "click",
@@ -126,10 +101,44 @@
       {
         "action": "check",
         "selector": ".display",
-        "value": "Infinity"
+        "value": "6"
       },
       {
-        "action": "screenshot"
+        "action": "click",
+        "selector": "button:has-text('C')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('1')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('.')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('5')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('+')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('1')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('=')"
+      },
+      {
+        "action": "check",
+        "selector": ".display",
+        "value": "2.5"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('C')"
       }
     ]
   }

@@ -100,7 +100,7 @@ async def generate_test_plan(llm: OpenAIAugmentedLLM, url: str, page_source: str
         with the following requirements:
         {test_description}
         
-        Before you start ensure the description is clear and concise and traslate into a sentece is Given When Then format.
+        Before you start ensure the description is clear and concise and translate into a sentece if Given When Then format is provided.
 
         Return ONLY a JSON object with the following structure:
         {{

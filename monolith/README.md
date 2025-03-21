@@ -60,7 +60,7 @@ python main.py https://templates.snapforms.com.au/form/2FnoQUKZdA/ "I want to be
 
 ```sh
 export test="
-Feature: Clasic calculator
+Feature: Classic calculator
 
 Given I am a Classic users 
 When I calculate 1+1 
@@ -68,7 +68,8 @@ Then I can confirm the calculation equates to 2 by validating the results sectio
 
 NOTES: 
 Ensure to test all calculations types, 
-Run 5 different calculations and 3 edge cases like division by 0
+Run 5 different calculations
+3 edge cases like division by 0, decimal points and large numbers
 "
 
 python main.py https://ale-sanchez-g.github.io/featureflags/ $test
