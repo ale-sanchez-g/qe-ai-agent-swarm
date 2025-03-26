@@ -1,0 +1,184 @@
+{
+  "url": "https://ale-sanchez-g.github.io/featureflags/",
+  "test_plan": {
+    "description": "Verify calculator functionality by performing various mathematical calculations and edge cases",
+    "steps": [
+      {
+        "action": "navigate",
+        "value": "https://ale-sanchez-g.github.io/featureflags/"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('1')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('+')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('1')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('=')"
+      },
+      {
+        "action": "check",
+        "selector": ".display",
+        "value": "2"
+      },
+      {
+        "action": "screenshot"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('C')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('3')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('-')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('1')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('=')"
+      },
+      {
+        "action": "check",
+        "selector": ".display",
+        "value": "2"
+      },
+      {
+        "action": "screenshot"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('C')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('6')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('/')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('2')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('=')"
+      },
+      {
+        "action": "check",
+        "selector": ".display",
+        "value": "3"
+      },
+      {
+        "action": "screenshot"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('C')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('7')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('*')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('3')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('=')"
+      },
+      {
+        "action": "check",
+        "selector": ".display",
+        "value": "21"
+      },
+      {
+        "action": "screenshot"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('C')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('9')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('/')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('0')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('=')"
+      },
+      {
+        "action": "check",
+        "selector": ".display",
+        "value": "Infinity"
+      },
+      {
+        "action": "screenshot"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('C')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('.')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('5')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('+')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('.')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('3')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('=')"
+      },
+      {
+        "action": "check",
+        "selector": ".display",
+        "value": "0.8"
+      },
+      {
+        "action": "screenshot"
+      }
+    ]
+  }
+}

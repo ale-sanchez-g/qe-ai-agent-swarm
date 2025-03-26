@@ -1,0 +1,5 @@
+asyncio
+mcp-agent
+anthropic
+pytest
+pytest-asyncio
