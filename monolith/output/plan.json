@@ -1,7 +1,7 @@
 {
   "url": "https://ale-sanchez-g.github.io/featureflags/",
   "test_plan": {
-    "description": "Validate calculator functionality through various mathematical calculations and edge cases",
+    "description": "Verify calculator functionality by performing various mathematical calculations and edge cases",
     "steps": [
       {
         "action": "navigate",
@@ -101,7 +101,7 @@
       },
       {
         "action": "click",
-        "selector": "button:has-text('8')"
+        "selector": "button:has-text('3')"
       },
       {
         "action": "click",
@@ -110,7 +110,7 @@
       {
         "action": "check",
         "selector": ".display",
-        "value": "56"
+        "value": "21"
       },
       {
         "action": "screenshot"
@@ -165,7 +165,7 @@
       },
       {
         "action": "click",
-        "selector": "button:has-text('5')"
+        "selector": "button:has-text('3')"
       },
       {
         "action": "click",
@@ -174,7 +174,7 @@
       {
         "action": "check",
         "selector": ".display",
-        "value": "1"
+        "value": "0.8"
       },
       {
         "action": "screenshot"

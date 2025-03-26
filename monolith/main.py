@@ -282,7 +282,22 @@ async def analyze_results(llm: OpenAIAugmentedLLM, results: Dict[str, Any], logg
     """
     # Ask the LLM to analyze the test results
     analysis = await llm.generate_str(
-        message=f"Create a markdown file with NOW date stamp as ddmmdd:time in the output folder and Analyze these test results and provide a summary:\n{json.dumps(results, indent=2)}"
+        message=f"""
+        Create a markdown file with NOW date stamp as ddmmdd:time in the output folder 
+        Analyze these test results and provide a summary:\n{json.dumps(results, indent=2)}
+        Include the following sections:
+        - Summary of test execution
+        - Key findings
+        - Recommendations for improvement
+        - Any errors encountered during execution
+        - Suggestions for further testing
+        - Any other relevant observations
+        IMPORTANT:
+        - Use clear and concise language.
+        - Format the analysis in markdown.
+        - Include code snippets if necessary.
+        - Do not include any unnecessary information.
+        """
     )
     
     logger.info("Test results analyzed")
