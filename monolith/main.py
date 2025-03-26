@@ -35,7 +35,7 @@ DEFAULT_LLM_PROVIDER = "anthropic"                # Default LLM provider
 # Initialize the MCP application
 app = MCPApp(name="mcp-agent-mono")
 
-class TestExecutionError(Exception):
+class ExecutionError(Exception):
     """Custom exception raised for errors during test execution.
     
     This helps distinguish between different types of errors during the test process
@@ -56,7 +56,7 @@ async def fetch_page_source(client: httpx.AsyncClient, playwright_url: str, url:
         The page source HTML as a string
         
     Raises:
-        TestExecutionError: If page source fetching fails
+        ExecutionError: If page source fetching fails
     """
     try:
         # Send a POST request to the Playwright service to navigate to the URL
@@ -68,11 +68,11 @@ async def fetch_page_source(client: httpx.AsyncClient, playwright_url: str, url:
     except httpx.RequestError as e:
         # Handle network-related errors
         logger.error(f"400 :: Failed to fetch page source: {e}")
-        raise TestExecutionError(f"Failed to fetch page source: {str(e)}")
+        raise ExecutionError(f"Failed to fetch page source: {str(e)}")
     except httpx.HTTPStatusError as e:
         # Handle HTTP status errors (4xx, 5xx)
         logger.error(f"400 :: HTTP error: {e.response.status_code} - {e}")
-        raise TestExecutionError(f"HTTP {e.response.status_code} error: {str(e)}")
+        raise ExecutionError(f"HTTP {e.response.status_code} error: {str(e)}")
 
 async def generate_test_plan(llm: OpenAIAugmentedLLM, url: str, page_source: str, test_description: str, logger: Any) -> Dict[str, Any]:
     """Generate a test plan using the provided LLM.
@@ -88,7 +88,7 @@ async def generate_test_plan(llm: OpenAIAugmentedLLM, url: str, page_source: str
         A dictionary containing the generated test plan
         
     Raises:
-        TestExecutionError: If JSON parsing fails
+        ExecutionError: If JSON parsing fails
     """
     logger.info(f"Generating test plan for {url} using page source and description: {test_description}")
     
@@ -133,7 +133,7 @@ async def generate_test_plan(llm: OpenAIAugmentedLLM, url: str, page_source: str
         return plan_json
     except json.JSONDecodeError as e:
         logger.error(f"400 :: Failed to decode JSON from LLM response: {e}")
-        raise TestExecutionError(f"Failed to decode JSON from LLM response: {str(e)}")
+        raise ExecutionError(f"Failed to decode JSON from LLM response: {str(e)}")
 
 def save_test_plan(plan_json: Dict[str, Any], output_dir: str, logger: Any) -> None:
     """Save the test plan to a file.
@@ -144,7 +144,7 @@ def save_test_plan(plan_json: Dict[str, Any], output_dir: str, logger: Any) -> N
         logger: Logger instance for recording events
         
     Raises:
-        TestExecutionError: If saving fails
+        ExecutionError: If saving fails
     """
     try:
         # Create the output directory if it doesn't exist
@@ -157,7 +157,7 @@ def save_test_plan(plan_json: Dict[str, Any], output_dir: str, logger: Any) -> N
         logger.info(f"Test plan saved to {output_path}")
     except Exception as e:
         logger.error(f"400 :: Failed to save test plan: {e}")
-        raise TestExecutionError(f"Failed to save test plan: {str(e)}")
+        raise ExecutionError(f"Failed to save test plan: {str(e)}")
 
 def validate_test_plan(plan_json: Dict[str, Any], logger: Any) -> None:
     """Validate the test plan structure.
@@ -167,17 +167,17 @@ def validate_test_plan(plan_json: Dict[str, Any], logger: Any) -> None:
         logger: Logger instance for recording events
         
     Raises:
-        TestExecutionError: If validation fails
+        ExecutionError: If validation fails
     """
     # Check that the plan has the required structure
     if not plan_json or "test_plan" not in plan_json:
         logger.error("Invalid test plan structure")
-        raise TestExecutionError("Invalid test plan structure")
+        raise ExecutionError("Invalid test plan structure")
     
     # Check that the plan has steps
     if "steps" not in plan_json["test_plan"]:
         logger.error("Test plan does not contain steps")
-        raise TestExecutionError("Test plan does not contain steps")
+        raise ExecutionError("Test plan does not contain steps")
 
 async def execute_test_plan(
     client: httpx.AsyncClient, 
@@ -201,7 +201,7 @@ async def execute_test_plan(
         A dictionary containing the test results
         
     Raises:
-        TestExecutionError: If execution fails
+        ExecutionError: If execution fails
     """
     logger.info("Executing test plan with Playwright service")
     logger.debug(f"Sending request to Playwright API at {playwright_url}/execute")
@@ -230,7 +230,7 @@ async def execute_test_plan(
                     retry_count += 1
                     continue
                 else:
-                    raise TestExecutionError(f"Playwright API rejected the request: {error_details}")
+                    raise ExecutionError(f"Playwright API rejected the request: {error_details}")
             
             # Check for other HTTP errors
             response.raise_for_status()
@@ -247,7 +247,7 @@ async def execute_test_plan(
             logger.warning(f"Request timed out. Retry {retry_count + 1}/{max_retries}")
             retry_count += 1
             if retry_count > max_retries:
-                raise TestExecutionError("Request to Playwright API timed out after multiple attempts")
+                raise ExecutionError("Request to Playwright API timed out after multiple attempts")
         
         except httpx.HTTPStatusError as e:
             # Handle HTTP errors
@@ -262,11 +262,11 @@ async def execute_test_plan(
             
             # Don't retry client errors (4xx) except for 429 (Too Many Requests)
             if 400 <= e.response.status_code < 500 and e.response.status_code != 429:
-                raise TestExecutionError(f"HTTP {e.response.status_code} error: {str(e)}")
+                raise ExecutionError(f"HTTP {e.response.status_code} error: {str(e)}")
             
             retry_count += 1
             if retry_count > max_retries:
-                raise TestExecutionError(f"Failed after {max_retries} retries: {str(e)}")
+                raise ExecutionError(f"Failed after {max_retries} retries: {str(e)}")
             logger.info(f"Retrying request ({retry_count}/{max_retries})...")
 
 async def analyze_results(llm: OpenAIAugmentedLLM, results: Dict[str, Any], logger: Any) -> str:
@@ -409,7 +409,7 @@ async def run_test_on_website(
                         "analysis": analysis
                     }
                     
-        except TestExecutionError as e:
+        except ExecutionError as e:
             # Handle test execution errors
             logger.error(f"Test execution error: {e}")
             return {"error": str(e)}

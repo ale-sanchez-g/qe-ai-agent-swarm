@@ -73,7 +73,7 @@ python main.py https://ale-sanchez-g.github.io/featureflags/ "User will test dif
 ```
 - Form (Fail test)
 
-``` sh
+```sh
 python main.py https://templates.snapforms.com.au/form/2FnoQUKZdA/ "I want to be able to fill my Personal information form and submit. If radio buttons exist just click on the label and drop down list you must click on first and then select the value"
 ```
 
