@@ -54,7 +54,7 @@ ACTUAL_KEY="your_actual_api_key_here"
 sed -i '' "s/ANTHROPIC_API_KEY/$ACTUAL_KEY/g" "$FILE"
 
 echo "API key replaced successfully in $FILE"
-``
+```
 
 
 ## Running the MCP Puppet
