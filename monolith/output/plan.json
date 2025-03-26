@@ -1,98 +1,183 @@
 {
-  "url": "https://templates.snapforms.com.au/form/2FnoQUKZdA/",
+  "url": "https://ale-sanchez-g.github.io/featureflags/",
   "test_plan": {
-    "description": "Fill out and submit the Personal Information Form, testing all required fields and form submission",
+    "description": "Validate calculator functionality through various mathematical calculations and edge cases",
     "steps": [
       {
         "action": "navigate",
-        "value": "https://templates.snapforms.com.au/form/2FnoQUKZdA/"
-      },
-      {
-        "action": "type",
-        "selector": "#field_3631528",
-        "value": "John"
-      },
-      {
-        "action": "type",
-        "selector": "#field_3631529",
-        "value": "Doe"
-      },
-      {
-        "action": "type",
-        "selector": "#field_3631530",
-        "value": "01/01/1990"
+        "value": "https://ale-sanchez-g.github.io/featureflags/"
       },
       {
         "action": "click",
-        "selector": "label[for='field_3631531_6777915']"
-      },
-      {
-        "action": "type",
-        "selector": "#field_3631532",
-        "value": "123 Test Street"
-      },
-      {
-        "action": "type",
-        "selector": "#field_3631533",
-        "value": "Sydney"
+        "selector": "button:has-text('1')"
       },
       {
         "action": "click",
-        "selector": "#field_3631534"
+        "selector": "button:has-text('+')"
       },
       {
         "action": "click",
-        "selector": "#field_3631534 option[value='NSW']"
-      },
-      {
-        "action": "type",
-        "selector": "#field_3631535",
-        "value": "2000"
-      },
-      {
-        "action": "type",
-        "selector": "#field_3631536",
-        "value": "0412345678"
-      },
-      {
-        "action": "type",
-        "selector": "#field_3631538",
-        "value": "john.doe@example.com"
+        "selector": "button:has-text('1')"
       },
       {
         "action": "click",
-        "selector": "label[for='field_3631539_6777926']"
+        "selector": "button:has-text('=')"
       },
       {
-        "action": "type",
-        "selector": "#field_3631548",
-        "value": "Jane Doe"
+        "action": "check",
+        "selector": ".display",
+        "value": "2"
       },
       {
-        "action": "type",
-        "selector": "#field_3631549",
-        "value": "Sister"
-      },
-      {
-        "action": "click",
-        "selector": "label[for='field_3631550_6777932']"
-      },
-      {
-        "action": "type",
-        "selector": "#field_3631552",
-        "value": "Test submission"
+        "action": "screenshot"
       },
       {
         "action": "click",
-        "selector": "button:has-text('Submit')"
+        "selector": "button:has-text('C')"
       },
       {
-        "action": "wait",
-        "value": "3000"
+        "action": "click",
+        "selector": "button:has-text('3')"
       },
       {
-        "action": "screenshot",
-        "value": "form_submission.png"
+        "action": "click",
+        "selector": "button:has-text('-')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('1')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('=')"
+      },
+      {
+        "action": "check",
+        "selector": ".display",
+        "value": "2"
+      },
+      {
+        "action": "screenshot"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('C')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('6')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('/')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('2')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('=')"
+      },
+      {
+        "action": "check",
+        "selector": ".display",
+        "value": "3"
+      },
+      {
+        "action": "screenshot"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('C')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('7')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('*')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('8')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('=')"
+      },
+      {
+        "action": "check",
+        "selector": ".display",
+        "value": "56"
+      },
+      {
+        "action": "screenshot"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('C')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('9')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('/')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('0')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('=')"
+      },
+      {
+        "action": "check",
+        "selector": ".display",
+        "value": "Infinity"
+      },
+      {
+        "action": "screenshot"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('C')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('.')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('5')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('+')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('.')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('5')"
+      },
+      {
+        "action": "click",
+        "selector": "button:has-text('=')"
+      },
+      {
+        "action": "check",
+        "selector": ".display",
+        "value": "1"
+      },
+      {
+        "action": "screenshot"
       }
     ]
   }
