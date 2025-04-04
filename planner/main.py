@@ -65,6 +65,35 @@ async def check_jira_projects():
             )
             logger.info(f"Project results: {result}")
 
+            #  Create subttasks for each Issue in the MCP project
+            result = await llm.generate_str(
+                message=f"""
+                Given you are a Certified Agile Quality Engineer 
+                review Task MCP-1 and create sub-tasks base on the following principles:
+
+                1. Each sub-task should be a small
+                manageable piece of work that can be completed in a short time frame.
+                2. Each sub-task should be clearly defined and have a specific goal.
+                3. Each sub-task should be independent and not rely on other tasks.
+                4. Each sub-task should be testable and have clear acceptance criteria.
+                5. Each sub-task should have a clear priority level.
+                6. If the issues already have sub-tasks, only create new sub-tasks if they are necessary.
+
+                
+                IMPORTANT:
+                - Do not create sub-tasks for issues that are already closed.
+                - Do not create sub-tasks for issues that are not in the MCP project.
+                - Only Create sub-tasks for Quality Engineering.
+                    - Create a test approach as a sub-task, using Shift Left Testing and Testing Pyramid.
+                    - Create an environment and test data strategy as a sub-task.
+                    - Based on the test approach, individual test experiments with clear oobjectives, using the Scientific Method.
+                - Do not create sub-tasks for issues that are not related to Quality Engineering.
+                - Ensure to use the correct format when creating sub-tasks.
+                """,
+            )
+            logger.info(f"Sub-tasks created: {result}")
+            #  Create subttasks for each Issue in the SUP project
+
             # Multi-turn conversations - review the result
             result = await llm.generate_str(
                 message=f"""
@@ -81,7 +110,23 @@ async def check_jira_projects():
 
 
                 Provide a summary of the issues and their status in a markdown report.
+                If you had any problems, please include them in the report.
                 Save the report in the file system.
+                IMPORTANT:
+                - Do not include any personal information.
+                - Do not include any sensitive information.
+                - Do not include any confidential information.
+                - Save with the time and date of the report.
+
+                Create a separate file for with any errors or problems you had, with details of the error.
+                Save the errors in the file system.
+                Example:
+                    ERRORS:
+                    - Error 1: Description of the error
+                      API call failed
+                      Details: <details of the error>
+                      Response: <response of the error>
+                      Root cause: <root cause of the error>
                 """,
             )
             logger.info(f"Project review: {result}")
