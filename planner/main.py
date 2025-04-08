@@ -69,7 +69,7 @@ async def check_jira_projects():
             result = await llm.generate_str(
                 message=f"""
                 Given you are a Certified Agile Quality Engineer 
-                review Task MCP-1 and create sub-tasks base on the following principles:
+                review Task MCP-11 and create sub-tasks base on the following principles:
 
                 1. Each sub-task should be a small
                 manageable piece of work that can be completed in a short time frame.
