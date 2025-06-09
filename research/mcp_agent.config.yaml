@@ -1,6 +1,6 @@
 execution_engine: asyncio
 logger:
-  transports: [console]  # You can use [file, console] for both
+  transports: [file]  # You can use [file, console] for both
   level: debug
   path: "logs/mcp-agent.jsonl"  # Used for file transport
   # For dynamic log filenames:
@@ -28,4 +28,4 @@ mcp:
   
 
 anthropic:
-  default_model: "claude-3-5-sonnet-20241022"
+  default_model: "claude-3-5-haiku-20241022"

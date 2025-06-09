@@ -20,8 +20,6 @@ from mcp_agent.workflows.llm.augmented_llm_anthropic import AnthropicAugmentedLL
 # Default LLM provider
 DEFAULT_LLM_PROVIDER = "anthropic" 
 
-# Research policy from policies folder
-RESEARCH_POLICY = "./policies/market_research_policy.md"
 
 # Initialize the MCP application
 app = MCPApp(name="mcp-research-agent")
@@ -62,14 +60,18 @@ async def research_agent():
                 return
             logger.info(f"Researching topic: {topic}")
             
-            # Load research policy
-            policy = RESEARCH_POLICY
-            logger.info(f"Loading research policy from: {policy}")
 
             result = await llm.generate_str(
                 message=f"""
-                Conduct a detailed market research analysis on {topic}. Focus on their maturity, initiatives, challenges, and public statements related to:
-	            
+                MUST RULE:
+                - Spend a minimum of 5 minutes researching the topic.
+                - Use the filesystem to understand the research policies provided and use the example reports.
+                 - Paths are ./policies and ./examples
+                - Conduct a detailed research analysis on {topic}.
+	            - Always Provide citations and URLs so a human can cross-check the information.
+                - Summarise insights clearly, and identify gaps or opportunities where consulting support could be positioned.
+
+                FOCUS AREAS:
                 1.	DevOps practices (e.g., CI/CD adoption, platform engineering, SRE, automation, release management, observability).
 	            2.	Digital immunity (e.g., proactive resilience, chaos engineering, automated testing, incident response, security engineering, error budgets).
 
@@ -80,11 +82,8 @@ async def research_agent():
                     •	Job postings that indicate internal capabilities or priorities.
                     •	Any known transformation programmes or digital strategies.
 
-                Provide citations and URLs where applicable, summarise insights clearly, and identify gaps or opportunities where consulting support could be positioned.
-
-                Follow the research policy {policy} and ensure that your report adheres to the guidelines provided.
-
-                Use the example reports as a guide for structure and content, and save in the output directory.
+                OUTPUT:
+                - Provide a detail secondary report of Actions taken for each research step with URL and citations.  
                 """,
             )
             logger.info(f"Project results: {result}")            

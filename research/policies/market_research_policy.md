@@ -1,4 +1,4 @@
-# Comprehensive Market Research Policy and Methodology
+# Comprehensive Research Policy and Methodology
 
 ## 1. Objective
 Establish a systematic, thorough, and ethical approach to conducting comprehensive market research for strategic business intelligence.
@@ -11,150 +11,64 @@ Establish a systematic, thorough, and ethical approach to conducting comprehensi
 - Determine key information requirements
 - Establish research boundaries and limitations
 
-### 2.2 Research Resource Identification
-- Compile multiple research sources:
-  * Official company websites
-  * Investor relations pages
-  * Annual reports
-  * Financial databases
-  * Industry analysis platforms
-  * Regulatory body websites
+### 2.2 URLs to search topic
 
-## 3. Research Methodology
+Here’s a list of essential websites and platforms your consulting firm can navigate to research clients thoroughly before or during engagements. These sites cover financials, leadership, technology stack, news, public perception, hiring trends, compliance issues, and more — giving you a 360° view of a target organisation:
 
-### 3.1 Source Verification Protocol
-1. **URL Validation**
-   - Check URL accessibility
-   - Verify content relevance
-   - Document access status:
-     * ✅ Fully Accessible
-     * ⚠️ Partially Accessible
-     * ❌ Not Accessible
+⸻
 
-2. **Content Authentication**
-   - Cross-reference information from multiple sources
-   - Validate data accuracy
-   - Note potential biases or limitations
+🧩 Company Overview & Financials
+	1.	[Company Website] – For official messaging, leadership, service lines, customer success stories, and contact information.
+	2.	[LinkedIn] – Company profile, key employees, hiring trends, content engagement, recent posts.
+	3.	Crunchbase – Funding rounds, acquisitions, investments, executive team.
+	4.	PitchBook – Deep VC/private equity insight (premium).
+	5.	Owler – Competitive comparisons, estimated revenue, CEO rating, news.
+	6.	ZoomInfo – Organisational charts, contacts, tech stacks (premium).
+	7.	Morningstar / Yahoo Finance – Financial statements and stock performance (for public companies).
+	8.	OpenCorporates – Registration and corporate structure info (global).
 
-### 3.2 Research Techniques
-- Use systematic, parallel research methods
-- Leverage multiple information retrieval tools
-- Apply critical analysis to gathered information
-- Maintain comprehensive documentation
+⸻
 
-## 4. Digital Research Tools and Techniques
+🧠 Technology Stack & Digital Maturity
+	1.	BuiltWith – Discover front-end and back-end tech stacks.
+	2.	Wappalyzer – Tech stack, hosting, CMS, analytics tools.
+	3.	StackShare.io – Tech stacks of well-known companies (user-submitted).
+	4.	Gartner Peer Insights – Technology reviews from real users.
+	5.	G2 – Product usage, reviews, popularity across enterprises.
+	6.	SimilarTech – Competitor technology analysis.
 
-### 4.1 Recommended Tools
-- Web scraping utilities
-- URL verification services
-- Content analysis platforms
-- Archival research databases
+⸻
 
-### 4.2 Research Workflow
-1. Initial URL collection
-2. Parallel verification process
-3. Content extraction
-4. Information compilation
-5. Cross-referencing
-6. Analysis and synthesis
+🔎 Recruitment & Organisational Signals
+	1.	LinkedIn Jobs – Hiring activity, job descriptions.
+	2.	Indeed / Glassdoor – Employee reviews, salaries, workplace culture.
+	3.	TeamBlind – Anonymous employee insight (more US-focused).
 
-## 5. Documentation Standards
+⸻
 
-### 5.1 Research Report Components
-- Executive Summary
-- Methodology Overview
-- Key Findings
-- Source Verification Status
-- Recommendations
-- Limitations and Caveats
+🌐 News, PR & Media Mentions
+	1.	Google News – Track client mentions, press releases, controversies.
+	2.	PR Newswire – Corporate PR releases.
+	3.	TechCrunch / The Register – Tech industry news coverage.
+	4.	Australian Financial Review (for AU clients) – Strategic moves, executive interviews.
+	5.	Seeking Alpha – Market commentary and earnings calls (public companies).
 
-### 5.2 Confluence Documentation
-- Create structured, hierarchical pages
-- Use consistent formatting
-- Include metadata and version tracking
-- Provide clear navigation
+⸻
 
-## 6. Ethical Considerations
+⚖️ Regulatory, Compliance & ESG
+	1.	ASIC Registers – Corporate compliance in Australia.
+	2.	ASX – Public disclosures of listed Australian companies.
+	3.	EDGAR – SEC Filings – For US-based public companies.
+	4.	Glass Lewis / ISS Governance – ESG & governance profiles.
+	5.	Sustainalytics – ESG risk ratings (where applicable).
 
-### 6.1 Research Ethics
-- Respect intellectual property rights
-- Obtain information through legitimate means
-- Maintain transparency in research methods
-- Protect sensitive information
-- Avoid conflicts of interest
+⸻
 
-### 6.2 Data Privacy
-- Comply with data protection regulations
-- Anonymize sensitive information
-- Secure research materials
-- Implement access controls
+🕵️ Competitor & Market Intelligence
+	1.	CB Insights – Disruption signals, industry trends, M&A.
+	2.	Hoovers / Dun & Bradstreet – Business intelligence reports.
+	3.	Gartner Magic Quadrant – Vendor positioning by capability.
+	4.	Tracxn – Start-up and innovation mapping.
+	5.	Google Patents – To check IP filings and R&D focus.
 
-## 7. Technology and Innovation Focus
 
-### 7.1 Key Research Areas
-- Digital transformation strategies
-- Technological innovations
-- Market positioning
-- Community and social responsibility initiatives
-
-### 7.2 Innovation Assessment
-- Analyze technological capabilities
-- Evaluate digital strategy
-- Identify competitive advantages
-- Explore future technological roadmaps
-
-## 8. Continuous Improvement
-
-### 8.1 Research Iteration
-- Regularly update research materials
-- Reassess methodologies
-- Incorporate new research techniques
-- Stay current with industry trends
-
-### 8.2 Skill Development
-- Continuous learning in:
-  * Digital research techniques
-  * Industry-specific knowledge
-  * Analytical tools and platforms
-  * Emerging technologies
-
-## 9. Reporting and Presentation
-
-### 9.1 Reporting Guidelines
-- Clear, concise language
-- Data-driven insights
-- Visual representations
-- Actionable recommendations
-
-### 9.2 Presentation Formats
-- Markdown documents
-- Confluence pages
-- Slide decks
-- Interactive dashboards
-
-## 10. Risk Management
-
-### 10.1 Research Risks
-- Incomplete or misleading information
-- Rapidly changing market conditions
-- Limited access to sources
-- Potential information biases
-
-### 10.2 Mitigation Strategies
-- Multiple source verification
-- Continuous monitoring
-- Adaptive research approaches
-- Transparent reporting of limitations
-
-## Appendices
-- Research Tool Checklist
-- Source Evaluation Matrix
-- Ethical Research Guidelines
-- Version Control Log
-
-## Version Information
-- Version: 1.0
-- Last Updated: [Current Date]
-- Approved By: [Research Team Lead]
-
-**Note:** This policy is a living document and should be regularly reviewed and updated to reflect changing research landscapes and technological advancements.
