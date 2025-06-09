@@ -1,18 +1,49 @@
 # Research Agent
 
-The Research Agent is part of the QE-AI-Agent-Swarm project, designed to conduct intelligent research and analysis using AI capabilities powered by the Model Context Protocol (MCP).
+The Research Agent is part of the QE-AI-Agent-Swarm project, designed to conduct intelligent research and generate comprehensive reports on any topic using AI capabilities powered by the Model Context Protocol (MCP).
 
 ## Overview
 
-This research module provides an AI-powered agent that can perform various research tasks, analyze data, and generate insights. It's built on top of the MCP Agent framework and leverages Anthropic's Claude models for natural language understanding and generation.
+This research module provides an AI-powered agent that can perform comprehensive research on any topic, gather information from multiple sources, analyze data, and generate detailed markdown reports. It's built on top of the MCP Agent framework and leverages Anthropic's Claude models for natural language understanding and generation.
 
 ## Features
 
-- **AI-Powered Research**: Uses Claude models for intelligent analysis and research
+- **Topic-Based Research**: Research any topic by providing it as a command line argument
+- **Comprehensive Reports**: Generates detailed markdown reports with structured analysis
+- **Multi-Source Research**: Gathers information from web sources using the fetch MCP server
+- **AI-Powered Analysis**: Uses Claude models for intelligent analysis and synthesis
 - **MCP Integration**: Leverages Model Context Protocol for enhanced capabilities
+- **Automatic File Management**: Saves reports with timestamps in organized output directory
 - **Configurable Logging**: Flexible logging system with console and file outputs
 - **Containerized Deployment**: Ready-to-run Docker container
 - **Async Architecture**: Built with asyncio for high-performance operations
+
+## Quick Start
+
+### Command Line Usage
+
+```bash
+# Basic usage - research a topic
+python main.py "artificial intelligence"
+
+# Specify output directory
+python main.py "machine learning" --output /path/to/reports
+
+# Research with shortened flag
+python main.py "quantum computing" -o ./reports
+```
+
+### Example Output
+
+When you run the research agent, it will:
+1. Gather information from multiple web sources
+2. Analyze and synthesize the findings
+3. Generate a comprehensive markdown report
+4. Save both a detailed report and a summary file
+
+Example files generated:
+- `research_report_artificial_intelligence_20241201_143022.md` - Full detailed report
+- `research_summary_artificial_intelligence_20241201_143022.md` - Quick summary
 
 ## Prerequisites
 
@@ -77,6 +108,27 @@ anthropic:
 **⚠️ Important**: Never commit the secrets file to version control. Use `mcp_agent.secrets-example.yaml` as a template.
 
 ## Installation & Setup
+
+## Installation
+
+1. Ensure Python 3.12 is installed on your system
+2. Set up a virtual environment:
+```sh
+python3 -m venv mcpagent
+```
+
+3. Activate the virtual environment:
+   - On macOS/Linux:
+```sh
+source mcpagent/bin/activate
+```
+   - On Windows:
+```sh
+.\mcpagent\Scripts\activate
+```
+
+4. Install dependencies:
+```sh
 
 ### Local Development
 
