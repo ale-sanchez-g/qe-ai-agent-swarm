@@ -23,8 +23,9 @@ mcp:
           "@modelcontextprotocol/server-filesystem",
           "./output/",
           "./policies/",
+          "./examples/",
         ]
   
 
 anthropic:
-  default_model: "claude-3-5-haiku-20241022"
+  default_model: "claude-3-5-sonnet-20241022"

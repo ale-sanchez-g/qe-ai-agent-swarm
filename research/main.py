@@ -68,14 +68,23 @@ async def research_agent():
 
             result = await llm.generate_str(
                 message=f"""
-                You are a research agent. Your task is to conduct research on the following topic:
-                {topic}
-                Please provide a comprehensive report including the latest information, key findings, and references.
-                Ensure your report is well-structured and informative.
-                Use the tools available to gather information and generate reports.
-                You can also use the filesystem to store your research reports.
+                Conduct a detailed market research analysis on {topic}. Focus on their maturity, initiatives, challenges, and public statements related to:
+	            
+                1.	DevOps practices (e.g., CI/CD adoption, platform engineering, SRE, automation, release management, observability).
+	            2.	Digital immunity (e.g., proactive resilience, chaos engineering, automated testing, incident response, security engineering, error budgets).
+
+                Include the following in your analysis:
+                    •	Last 12 months public announcements, blog posts, or whitepapers.
+                    •	Partnerships or vendors used (e.g., LaunchDarkly, Datadog, GitHub, Azure DevOps, etc.).
+                    •	Known use of AI/ML in engineering or ops.
+                    •	Job postings that indicate internal capabilities or priorities.
+                    •	Any known transformation programmes or digital strategies.
+
+                Provide citations and URLs where applicable, summarise insights clearly, and identify gaps or opportunities where consulting support could be positioned.
 
                 Follow the research policy {policy} and ensure that your report adheres to the guidelines provided.
+
+                Use the example reports as a guide for structure and content, and save in the output directory.
                 """,
             )
             logger.info(f"Project results: {result}")            

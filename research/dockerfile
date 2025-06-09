@@ -2,11 +2,28 @@ FROM python:3.12-slim-bullseye
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y --no-install-recommends gcc libffi-dev && rm -rf /var/lib/apt/lists/*
+# Install system dependencies including Node.js
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    libffi-dev \
+    curl \
+    ca-certificates \
+    && curl -fsSL https://deb.nodesource.com/setup_lts.x | bash - \
+    && apt-get install -y nodejs \
+    && rm -rf /var/lib/apt/lists/*
 
+# Install uv for uvx command
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+ENV PATH="/root/.cargo/bin:$PATH"
+
+# Install Python dependencies
 COPY requirements.txt .
 RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
 
+# Copy application code
 COPY . .
+
+# Create output and policies directories if they don't exist
+RUN mkdir -p output policies
 
 CMD ["python", "main.py"]
