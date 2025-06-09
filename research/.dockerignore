@@ -1,0 +1,43 @@
+# Exclude development files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Exclude version control
+.git/
+.gitignore
+
+# Exclude virtual environments
+mcpagent/
+venv/
+env/
+ENV/
+
+# Exclude IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Exclude documentation
+*.md
+README.md
+
+# Exclude Docker files
+dockerfile
+.dockerignore
+
+# Exclude output and logs
+output/
+logs/
+*.log
+
+# Exclude OS files
+.DS_Store
+Thumbs.db
