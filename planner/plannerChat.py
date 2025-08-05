@@ -74,8 +74,9 @@ async def process_message(user_message: str, agent: Agent = None, websocket: Web
                 name="ChatAgent",
                 instruction="""You are an AI assistant that helps with research and analysis using available tools.
                                Answer user queries using the provided context and tools.
-                               Be concise, helpful and accurate.""",
-                server_names=["mcp-atlassian", "filesystem", "fetch"]
+                               Be concise, helpful and accurate.
+                               """,
+                server_names=["mcp-atlassian", "filesystem"]
             )
     
     async with agent:
@@ -106,6 +107,7 @@ async def process_message(user_message: str, agent: Agent = None, websocket: Web
             Available tools: {json.dumps(available_tools)}
             
             Respond to the user query using the available tools when appropriate.
+            Review the output folder for any previous context of the conversation
             If specific information is requested that can be found in Confluence or other sources,
             use the appropriate tool to fetch that information.
             
@@ -113,6 +115,15 @@ async def process_message(user_message: str, agent: Agent = None, websocket: Web
             """
         )
         
+        # Store all responses in output folder
+        output_dir = Path("output")
+        output_dir.mkdir(exist_ok=True)
+
+        # Save the response to a file
+        response_file = output_dir / f"{uuid.uuid4()}.md"
+        with open(response_file, "w") as f:
+            f.write(response)
+
         return response
 
 # Setup FastAPI routes
