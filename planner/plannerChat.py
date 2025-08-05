@@ -211,6 +211,10 @@ async def list_reports():
     reports.sort(key=lambda x: x["created"], reverse=True)
     return {"reports": reports}
 
+@app.get("/reports", response_class=HTMLResponse)
+async def get_reports_page(request: Request):
+    return templates.TemplateResponse("reports.html", {"request": request})
+
 if __name__ == "__main__":    
     # Run the FastAPI app with uvicorn
     print("Starting MCP Planner Chat UI server...")
