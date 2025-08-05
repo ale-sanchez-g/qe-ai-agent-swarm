@@ -10,15 +10,8 @@ from datetime import datetime
 
 from mcp_agent.app import MCPApp
 from mcp_agent.agents.agent import Agent
-from mcp_agent.workflows.llm.augmented_llm import RequestParams
-from mcp_agent.workflows.llm.llm_selector import ModelPreferences
 from mcp_agent.workflows.llm.augmented_llm_anthropic import AnthropicAugmentedLLM
 
-
-# Configuration constants with default values
-DEFAULT_LLM_PROVIDER = "anthropic"                # Default LLM provider
-CACHE_DIR = "output/cache"                         # Cache directory for optimization
-MAX_CONTEXT_LENGTH = 4000                          # Maximum context length to reduce tokens
 
 # Token usage tracking
 token_usage = {
@@ -115,6 +108,10 @@ async def check_jira_projects():
                 ## Output Format
                 Structure your response as a complete markdown document that can be saved directly to the output folder.
                 Include section headers, bullet points, and a summary table of scores.
+
+                ## References
+                - Provide list of relevant confluence pages used for evaluation
+                - Include any other documentation or resources referenced in the analysis
                 
                 Return the complete analysis as one comprehensive response ready for file output.
                 """
@@ -124,7 +121,7 @@ async def check_jira_projects():
 
             # OPTIMIZATION: Save the result directly instead of multiple processing steps
             # This eliminates the need for additional LLM calls to format or review the content
-            output_path = "output/confluence_devops_analysis.md"
+            output_path = "output/confluence_devops_analysis" + f"_{int(time.time())}.md"
             try:
                 # Ensure output directory exists
                 os.makedirs("output", exist_ok=True)
@@ -161,9 +158,5 @@ if __name__ == "__main__":
     # Print performance and token usage summary
     print(f"\n=== Execution Summary ===")
     print(f"Total run time: {t:.2f}s")
-    print(f"Total LLM requests: {token_usage['total_requests']}")
-    if token_usage['total_requests'] > 0:
-        print(f"Average time per request: {t/token_usage['total_requests']:.2f}s")
-    print(f"Cache directory: {CACHE_DIR}")
     print("=========================\n")
 
