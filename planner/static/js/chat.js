@@ -122,9 +122,101 @@ messageInput.addEventListener('input', function() {
     sendButton.disabled = !messageInput.value.trim() || !socket || socket.readyState !== WebSocket.OPEN;
 });
 
+// Custom modal functions
+function showModal(title, placeholder, callback) {
+    const modal = document.getElementById('customModal');
+    const modalTitle = document.getElementById('modal-title');
+    const modalInput = document.getElementById('modal-input');
+    const submitButton = document.getElementById('modal-submit');
+    const cancelButton = document.getElementById('modal-cancel');
+    
+    // Set title and placeholder
+    modalTitle.textContent = title;
+    modalInput.placeholder = placeholder;
+    modalInput.value = '';
+    
+    // Show modal
+    modal.style.display = 'block';
+    
+    // Focus on input
+    setTimeout(() => {
+        modalInput.focus();
+    }, 100);
+    
+    // Handle submit
+    const handleSubmit = function() {
+        const value = modalInput.value.trim();
+        if (value !== '') {
+            callback(value);
+        }
+        modal.style.display = 'none';
+        
+        // Remove event listeners to prevent duplicates
+        submitButton.removeEventListener('click', handleSubmit);
+        modalInput.removeEventListener('keypress', handleKeyPress);
+        cancelButton.removeEventListener('click', handleCancel);
+    };
+    
+    // Handle cancel
+    const handleCancel = function() {
+        modal.style.display = 'none';
+        
+        // Remove event listeners to prevent duplicates
+        submitButton.removeEventListener('click', handleSubmit);
+        modalInput.removeEventListener('keypress', handleKeyPress);
+        cancelButton.removeEventListener('click', handleCancel);
+    };
+    
+    // Handle Enter key
+    const handleKeyPress = function(event) {
+        if (event.key === 'Enter') {
+            handleSubmit();
+        }
+    };
+    
+    // Add event listeners
+    submitButton.addEventListener('click', handleSubmit);
+    modalInput.addEventListener('keypress', handleKeyPress);
+    cancelButton.addEventListener('click', handleCancel);
+    
+    // Close if clicked outside
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            handleCancel();
+        }
+    };
+}
+
+// Handle predefined prompt buttons
+function setupQuickActionButtons() {
+    const confluenceButton = document.getElementById('confluence-button');
+    
+    confluenceButton.addEventListener('click', function() {
+        showModal(
+            'Find Information from Confluence', 
+            'Enter the Confluence page name or ID',
+            function(pageId) {
+                const predefinedPrompt = `I'll help you find information about ${pageId} documentation in Confluence.`;
+                if (socket && socket.readyState === WebSocket.OPEN) {
+                    socket.send(JSON.stringify({
+                        action: "message",
+                        content: predefinedPrompt
+                    }));
+                    
+                    // Focus back on the input field
+                    setTimeout(() => {
+                        messageInput.focus();
+                    }, 50);
+                }
+            }
+        );
+    });
+}
+
 // Connect on page load
 document.addEventListener('DOMContentLoaded', function() {
     connectWebSocket();
+    setupQuickActionButtons();
     addSystemMessage("Welcome to MCP Planner Chat! Type a message to begin.");
 });
     
