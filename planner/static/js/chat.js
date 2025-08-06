@@ -1,5 +1,5 @@
-
 let socket;
+let currentSessionId = null;
 const messageInput = document.getElementById('message-input');
 const sendButton = document.getElementById('send-button');
 const chatMessages = document.getElementById('chat-messages');
@@ -105,6 +105,29 @@ function sendMessage() {
             sendButton.disabled = false;
             messageInput.focus();
         }, 50);
+    }
+}
+
+function clearCurrentSession() {
+    if (currentSessionId) {
+        fetch(`/memory/session/${currentSessionId}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            addSystemMessage("Conversation memory cleared");
+            // Clear local chat display
+            chatMessages.innerHTML = '';
+        })
+        .catch(error => {
+            console.error('Error clearing session:', error);
+        });
+    }
+}
+
+function showSessionHistory() {
+    if (currentSessionId) {
+        window.open(`/memory/session/${currentSessionId}/history`, '_blank');
     }
 }
 
@@ -219,4 +242,3 @@ document.addEventListener('DOMContentLoaded', function() {
     setupQuickActionButtons();
     addSystemMessage("Welcome to MCP Planner Chat! Type a message to begin.");
 });
-    

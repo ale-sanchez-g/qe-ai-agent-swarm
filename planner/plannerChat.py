@@ -16,6 +16,9 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import uvicorn
 
+# Add this import for LangChain message types
+from memory_manager import session_manager
+
 from mcp_agent.app import MCPApp
 from mcp_agent.agents.agent import Agent
 from mcp_agent.workflows.llm.augmented_llm_anthropic import AnthropicAugmentedLLM
@@ -46,13 +49,19 @@ templates = Jinja2Templates(directory=str(templates_dir))
 class ConnectionManager:
     def __init__(self):
         self.active_connections: List[WebSocket] = []
+        self.connection_sessions: Dict[WebSocket, str] = {}
 
     async def connect(self, websocket: WebSocket):
         await websocket.accept()
         self.active_connections.append(websocket)
+        # Create a session ID for this connection
+        session_id = str(uuid.uuid4())
+        self.connection_sessions[websocket] = session_id
 
     def disconnect(self, websocket: WebSocket):
         self.active_connections.remove(websocket)
+        if websocket in self.connection_sessions:
+            del self.connection_sessions[websocket]
 
     async def send_personal_message(self, message: str, websocket: WebSocket):
         await websocket.send_text(message)
@@ -61,10 +70,19 @@ class ConnectionManager:
         for connection in self.active_connections:
             await connection.send_text(message)
 
+    def get_session_id(self, websocket: WebSocket) -> str:
+        return self.connection_sessions.get(websocket, str(uuid.uuid4()))
+
 manager = ConnectionManager()
 
-async def process_message(user_message: str, agent: Agent = None, websocket: WebSocket = None):
-    """Process a user message through the MCP agent and LLM"""
+async def process_message(user_message: str, agent: Agent = None, websocket: WebSocket = None, session_id: str = None):
+    """Process a user message through the MCP agent and LLM with memory"""
+    
+    # Get conversation memory
+    conversation_memory = session_manager.get_or_create_session(session_id)
+    
+    # Add user message to memory
+    conversation_memory.add_user_message(user_message)
     
     if not agent:
         async with mcp_app.run() as agent_app:
@@ -99,15 +117,29 @@ async def process_message(user_message: str, agent: Agent = None, websocket: Web
                 websocket
             )
         
-        # Generate response
+        # Get conversation context
+        conversation_context = conversation_memory.get_conversation_context()
+        recent_messages = conversation_memory.get_recent_messages(5)
+        
+        # Build context with conversation history
+        context_messages = "\n".join([
+            f"{'User' if msg.type == 'user' else 'Assistant'}: {msg.content}"
+            for msg in recent_messages
+        ])
+        
+        # Generate response with context
         response = await llm.generate_str(
             message=f"""
-            User query: {user_message}
+            Conversation Context:
+            {context_messages}
+            
+            Current User Query: {user_message}
             
             Available tools: {json.dumps(available_tools)}
             
-            Respond to the user query using the available tools when appropriate.
-            Review the output folder for any previous context of the conversation
+            Respond to the current user query while considering the conversation history.
+            Use the available tools when appropriate.
+            Review the output folder for any previous context of the conversation.
             If specific information is requested that can be found in Confluence or other sources,
             use the appropriate tool to fetch that information.
             
@@ -115,14 +147,19 @@ async def process_message(user_message: str, agent: Agent = None, websocket: Web
             """
         )
         
-        # Store all responses in output folder
+        # Add AI response to memory
+        conversation_memory.add_ai_message(response)
+        
+        # Store all responses in output folder (keep existing behavior)
         output_dir = Path("output")
         output_dir.mkdir(exist_ok=True)
 
         # Save the response to a file
-        response_file = output_dir / f"{uuid.uuid4()}.md"
+        response_file = output_dir / f"{session_id}_{uuid.uuid4()}.md"
         with open(response_file, "w") as f:
-            f.write(response)
+            f.write(f"# Conversation: {session_id}\n\n")
+            f.write(f"## User Query\n{user_message}\n\n")
+            f.write(f"## Response\n{response}")
 
         return response
 
@@ -142,6 +179,7 @@ app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await manager.connect(websocket)
+    session_id = manager.get_session_id(websocket)
     
     agent = None
     async with mcp_app.run() as agent_app:
@@ -168,8 +206,8 @@ async def websocket_endpoint(websocket: WebSocket):
                 )
                 
                 try:
-                    # Process the message
-                    response = await process_message(user_message, agent, websocket)
+                    # Process the message with session context
+                    response = await process_message(user_message, agent, websocket, session_id)
                     
                     # Send bot response back to the client
                     await manager.send_personal_message(
@@ -214,6 +252,40 @@ async def list_reports():
 @app.get("/reports", response_class=HTMLResponse)
 async def get_reports_page(request: Request):
     return templates.TemplateResponse("reports.html", {"request": request})
+
+@app.get("/memory/sessions")
+async def list_sessions():
+    """List all active sessions"""
+    return {
+        "sessions": list(session_manager.sessions.keys()),
+        "count": len(session_manager.sessions)
+    }
+
+@app.delete("/memory/session/{session_id}")
+async def clear_session(session_id: str):
+    """Clear memory for a specific session"""
+    if session_id in session_manager.sessions:
+        session_manager.sessions[session_id].clear_memory()
+        return {"message": f"Session {session_id} memory cleared"}
+    return {"error": "Session not found"}
+
+@app.get("/memory/session/{session_id}/history")
+async def get_session_history(session_id: str):
+    """Get conversation history for a session"""
+    if session_id in session_manager.sessions:
+        memory = session_manager.sessions[session_id]
+        messages = memory.get_recent_messages(50)  # Last 50 messages
+        return {
+            "session_id": session_id,
+            "messages": [
+                {
+                    "type": msg.type,
+                    "content": msg.content
+                }
+                for msg in messages
+            ]
+        }
+    return {"error": "Session not found"}
 
 if __name__ == "__main__":    
     # Run the FastAPI app with uvicorn
