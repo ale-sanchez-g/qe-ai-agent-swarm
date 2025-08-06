@@ -30,7 +30,6 @@ ENV/
 README.md
 
 # Exclude Docker files
-dockerfile
 .dockerignore
 
 # Exclude output and logs
