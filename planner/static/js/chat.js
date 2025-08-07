@@ -28,6 +28,8 @@ function connectWebSocket() {
         if (data.type === "user") {
             addUserMessage(data.content);
         } else if (data.type === "bot") {
+            // Remove robot animation when bot responds
+            removeRobotAnimation();
             addBotMessage(data.content);
         } else if (data.type === "system") {
             addSystemMessage(data.content);
@@ -88,7 +90,85 @@ function addBotMessage(message) {
 }
 
 function addSystemMessage(message) {
-    addMessage(message, 'system-message');
+    // Check if this is a processing message and show robot animation instead
+    if (message.includes("Processing your request") || 
+        message.includes("Connecting to LLM") || 
+        message.includes("processing") ||
+        message.toLowerCase().includes("working")) {
+        addRobotAnimation(message);
+    } else {
+        addMessage(message, 'system-message');
+    }
+}
+
+function addRobotAnimation(statusText = "Processing your request...") {
+    const robotMessages = [
+        "🤖 Analyzing your request...",
+        "🔍 Searching for information...",
+        "⚙️ Processing data...",
+        "🎯 Almost there...",
+        "✨ Finalizing results..."
+    ];
+    
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'message system-message';
+    messageDiv.innerHTML = `
+        <div class="robot-animation-container">
+            <div class="robot-track">
+                <div class="robot">🤖</div>
+                <div class="progress-dots">
+                    <div class="progress-dot"></div>
+                    <div class="progress-dot"></div>
+                    <div class="progress-dot"></div>
+                </div>
+            </div>
+            <div class="robot-status-text" id="robot-status">${statusText}</div>
+        </div>
+    `;
+    
+    chatMessages.appendChild(messageDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    
+    // Store reference to this animation for removal later
+    messageDiv.classList.add('robot-processing');
+    
+    // Cycle through different status messages
+    let messageIndex = 0;
+    const statusElement = messageDiv.querySelector('#robot-status');
+    const robot = messageDiv.querySelector('.robot');
+    
+    const messageInterval = setInterval(() => {
+        messageIndex = (messageIndex + 1) % robotMessages.length;
+        statusElement.textContent = robotMessages[messageIndex];
+        
+        // Add different robot states
+        robot.className = 'robot';
+        if (messageIndex % 3 === 0) {
+            robot.classList.add('thinking');
+        } else if (messageIndex % 3 === 1) {
+            robot.classList.add('working');
+        }
+    }, 2000);
+    
+    // Store interval ID so we can clear it later
+    messageDiv.intervalId = messageInterval;
+}
+
+function removeRobotAnimation() {
+    const robotMessages = document.querySelectorAll('.robot-processing');
+    robotMessages.forEach(msg => {
+        if (msg.intervalId) {
+            clearInterval(msg.intervalId);
+        }
+        // Fade out animation
+        msg.style.transition = 'opacity 0.5s ease-out';
+        msg.style.opacity = '0';
+        setTimeout(() => {
+            if (msg.parentNode) {
+                msg.parentNode.removeChild(msg);
+            }
+        }, 500);
+    });
 }
 
 function sendMessage() {
@@ -101,6 +181,12 @@ function sendMessage() {
         
         messageInput.value = '';
         sendButton.disabled = true;
+        
+        // Show robot animation immediately after sending
+        setTimeout(() => {
+            addRobotAnimation("🤖 Processing your request...");
+        }, 100);
+        
         setTimeout(() => {
             sendButton.disabled = false;
             messageInput.focus();

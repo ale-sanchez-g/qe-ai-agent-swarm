@@ -127,17 +127,17 @@ async def process_message(user_message: str, agent: Agent = None, websocket: Web
         # Send status update via WebSocket
         if websocket:
             await manager.send_personal_message(
-                json.dumps({"type": "system", "content": "Connecting to LLM..."}),
+                json.dumps({"type": "system", "content": "🤖 Connecting to LLM..."}),
                 websocket
             )
         
         # Connect to the LLM
         llm = await agent.attach_llm(AnthropicAugmentedLLM)
         
-        # Send processing status update
+        # Send processing status update (this will trigger robot animation)
         if websocket:
             await manager.send_personal_message(
-                json.dumps({"type": "system", "content": "Processing your request..."}),
+                json.dumps({"type": "system", "content": "🔍 Processing your request..."}),
                 websocket
             )
         
