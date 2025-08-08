@@ -373,5 +373,5 @@ document.addEventListener('DOMContentLoaded', function() {
     connectWebSocket();
     setupQuickActionButtons();
     setupProjectSummaryButton();
-    addSystemMessage("Welcome to MCP Planner Chat! Type a message to begin.");
+    addSystemMessage("FluxAI Chat + Human in the loop.");
 });

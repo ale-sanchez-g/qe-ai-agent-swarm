@@ -110,13 +110,13 @@ body::before {
 }
 
 .status-connected {
-    background: linear-gradient(135deg, #00f2c3 0%, #0098ff 100%);
+    background: linear-gradient(135deg, #00f281 0%, #00f281 100%);
     box-shadow: 0 0 10px rgba(0, 242, 195, 0.5);
     animation: connectedPulse 2s ease-in-out infinite;
 }
 
 .status-disconnected {
-    background: linear-gradient(135deg, #ff577f 0%, #ff6b9d 100%);
+    background: linear-gradient(135deg, #D81E5B 0%, #D81E5B 100%);
     box-shadow: 0 0 10px rgba(255, 87, 127, 0.5);
 }
 
@@ -200,7 +200,7 @@ body::before {
 }
 
 .quick-action-button:hover {
-    background: linear-gradient(135deg, #ff577f 0%, #ff6b9d 100%);
+    background: linear-gradient(135deg, #D81E5B 0%, #D81E5B 100%);
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(255, 87, 127, 0.3);
 }
@@ -303,7 +303,7 @@ body::before {
 }
 
 .system-message {
-    background: linear-gradient(135deg, #ff577f 0%, #ff6b9d 100%);
+    background: linear-gradient(135deg, #D81E5B 0%, #D81E5B 100%);
     color: white;
     margin: 15px auto;
     text-align: center;
