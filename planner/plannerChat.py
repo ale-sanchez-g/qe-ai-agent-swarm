@@ -248,8 +248,9 @@ async def process_message(user_message: str, agent: Agent = None, websocket: Web
         # Track the interaction if LaunchDarkly is available
         if tracker:
             try:
-                tracker.track()
-                print("LaunchDarkly interaction tracked")
+                tracker.track_success()
+                # Or with additional metadata if supported
+                # tracker.track_success(metadata={"user_message_length": len(user_message)})
             except Exception as e:
                 print(f"Error tracking LaunchDarkly interaction: {e}")
 
