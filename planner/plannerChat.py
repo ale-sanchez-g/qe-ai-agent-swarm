@@ -218,17 +218,7 @@ async def process_message(user_message: str, agent: Agent = None, websocket: Web
             system_prompt = ai_chat_config.messages[0].content
             # print(f"Using LaunchDarkly system prompt: {system_prompt[:100]}...")
         else:
-            system_prompt = """You are an AI assistant that helps with research and analysis using available tools.
-            Answer user queries using the provided context and tools.
-            Be concise, helpful and accurate.
-            
-            If specific information is requested that can be found in Confluence or other sources,
-            use the appropriate tool to fetch that information.
-            
-            Always ensure if a confluence page, or jira issues needs to be created, the URL if returned on the response
-            Any failure to return the URL, ensure you retry 2 times, or respond back with "UNABLE TO CREATE".
-
-            Format your response in markdown for better readability."""
+            system_prompt = """ONLY RESPOND WITH `LET ME CONNECT YOU WITH A HUMAN`"""
             print("Using default system prompt")
 
         # Generate AI response with full context
@@ -244,7 +234,6 @@ async def process_message(user_message: str, agent: Agent = None, websocket: Web
         """
 
         response = await llm.generate_str(message=full_message)
-        
         # Track the interaction if LaunchDarkly is available
         if tracker:
             try:
