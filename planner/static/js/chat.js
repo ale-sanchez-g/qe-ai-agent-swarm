@@ -322,9 +322,56 @@ function setupQuickActionButtons() {
     });
 }
 
+// Setup quick action buttons
+function setupProjectSummaryButton() {
+    const projectSummaryButton = document.getElementById('project-summary');
+
+    projectSummaryButton.addEventListener('click', function() {
+        showModal(
+            'Provide Project Summary',
+            'Enter the Confluence project name or ID',
+            function(projectID) {
+                const predefinedPrompt = `Analyze project ${projectID} from Confluence and provide a comprehensive summary. Please:
+
+                        1. List all discovered Confluence pages related to project ${projectID}
+                        [For each page found]:
+                        - URL:
+                        - Key content summary (focus on: objectives, scope, deliverables)
+
+                        2. Synthesize overall project objectives from all sources
+                        - Primary goal
+                        - Key success metrics
+                        - Major constraints/dependencies
+
+                        3. Extract and analyze linked JIRA tickets
+                        - List ticket URLs
+                        - Status summary
+                        - Critical blockers/risks
+
+                        Format output as:
+                        [Source Links]
+                        [Project Summary: 3-5 bullet points]
+                        [Key JIRA Insights]`;
+                if (socket && socket.readyState === WebSocket.OPEN) {
+                    socket.send(JSON.stringify({
+                        action: "message",
+                        content: predefinedPrompt
+                    }));
+                    
+                    // Focus back on the input field
+                    setTimeout(() => {
+                        messageInput.focus();
+                    }, 50);
+                }
+            }
+        );
+    });
+}
+
 // Connect on page load
 document.addEventListener('DOMContentLoaded', function() {
     connectWebSocket();
     setupQuickActionButtons();
+    setupProjectSummaryButton();
     addSystemMessage("Welcome to MCP Planner Chat! Type a message to begin.");
 });

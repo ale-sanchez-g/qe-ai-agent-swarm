@@ -116,7 +116,7 @@ async def process_message(user_message: str, agent: Agent = None, websocket: Web
                                Answer user queries using the provided context and tools.
                                Be concise, helpful and accurate.
                                """,
-                server_names=["mcp-atlassian", "filesystem"]
+                server_names=["mcp-atlassian", "filesystem", "fetch"]
             )
     
     async with agent:
@@ -142,7 +142,6 @@ async def process_message(user_message: str, agent: Agent = None, websocket: Web
             )
         
         # Build conversation context from memory
-        conversation_context = conversation_memory.get_conversation_context()
         recent_messages = conversation_memory.get_recent_messages(5)
         
         # Format recent conversation history
@@ -163,10 +162,13 @@ async def process_message(user_message: str, agent: Agent = None, websocket: Web
             
             Respond to the current user query while considering the conversation history.
             Use the available tools when appropriate.
-            Review the output folder for any previous context of the conversation.
+            
             If specific information is requested that can be found in Confluence or other sources,
             use the appropriate tool to fetch that information.
             
+            Always ensure if a confluence page, or jira issues needs to be created, the URL if returned on the response
+            Any failure to return the URL, ensure you retry 2 times, or respond back with "UNABLE TO CREATE".
+
             Format your response in markdown for better readability.
             """
         )
