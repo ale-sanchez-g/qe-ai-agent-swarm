@@ -7,8 +7,13 @@ It includes conversation memory management, WebSocket communication, and file ma
 
 import json
 import uuid
+import os
 from typing import Dict, List
 from pathlib import Path
+
+# Load environment variables from .env file
+from dotenv import load_dotenv
+load_dotenv()
 
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse, FileResponse
@@ -22,6 +27,63 @@ from mcp_agent.app import MCPApp
 from mcp_agent.agents.agent import Agent
 from mcp_agent.workflows.llm.augmented_llm_anthropic import AnthropicAugmentedLLM
 
+# LaunchDarkly AI Config
+import ldclient
+from ldclient import Context
+from ldclient.config import Config
+from ldai.client import LDAIClient, AIConfig, ModelConfig, LDMessage, ProviderConfig
+
+# Initialize LaunchDarkly client for AI integration
+# Get SDK key from env variable
+sdk_key = os.getenv("LAUNCHDARKLY_SDK_KEY")
+if not sdk_key:
+    print("Warning: LAUNCHDARKLY_SDK_KEY not found in environment variables")
+    print("LaunchDarkly features will be disabled")
+    ai_chat_config = None
+    tracker = None
+else:
+    try:
+        ldclient.set_config(Config(sdk_key=sdk_key))
+        ld_client = ldclient.get()
+        
+        # Wait for the client to initialize
+        if ld_client.is_initialized():
+            print("LaunchDarkly client initialized successfully")
+        else:
+            print("Warning: LaunchDarkly client failed to initialize")
+            
+        aiclient = LDAIClient(ld_client)
+
+        context = Context.builder("chat-bot-123abc") \
+            .set("firstName", "AJ") \
+            .set("lastName", "Smith") \
+            .build()
+
+        # Fall back to default configuration if needed
+        fallback_value = AIConfig(
+            enabled=True,
+            model=ModelConfig(
+                name="claude-3-5-haiku-20241022",
+                parameters={"temperature": 0.8},
+            ),
+            messages=[LDMessage(role="system", content="You are an AI assistant that helps with research and analysis using available tools. Answer user queries using the provided context and tools. Be concise, helpful and accurate.")],
+            provider=ProviderConfig(name="anthropic"),
+        )
+
+        ai_chat_config, tracker = aiclient.config('master-prompt', context, fallback_value)
+        print(f"LaunchDarkly AI config retrieved: {ai_chat_config.enabled}")
+        
+        # Debug: Print the system message content
+        if ai_chat_config.messages and len(ai_chat_config.messages) > 0:
+            print(f"System message from LaunchDarkly")
+        else:
+            print("No system message found in LaunchDarkly config")
+            
+    except Exception as e:
+        print(f"Error initializing LaunchDarkly: {e}")
+        print("Falling back to default configuration")
+        ai_chat_config = None
+        tracker = None
 
 # Initialize the MCP application with default configuration
 mcp_app = MCPApp(name="mcp-agent-research")
@@ -149,19 +211,16 @@ async def process_message(user_message: str, agent: Agent = None, websocket: Web
             f"{'User' if msg.type == 'user' else 'Assistant'}: {msg.content}"
             for msg in recent_messages
         ])
-        
-        # Generate AI response with full context
-        response = await llm.generate_str(
-            message=f"""
-            Conversation Context:
-            {context_messages}
-            
-            Current User Query: {user_message}
-            
-            Available tools: {json.dumps(available_tools)}
-            
-            Respond to the current user query while considering the conversation history.
-            Use the available tools when appropriate.
+
+        # Get system prompt from LaunchDarkly or use default
+        system_prompt = ""
+        if ai_chat_config and ai_chat_config.messages and len(ai_chat_config.messages) > 0:
+            system_prompt = ai_chat_config.messages[0].content
+            # print(f"Using LaunchDarkly system prompt: {system_prompt[:100]}...")
+        else:
+            system_prompt = """You are an AI assistant that helps with research and analysis using available tools.
+            Answer user queries using the provided context and tools.
+            Be concise, helpful and accurate.
             
             If specific information is requested that can be found in Confluence or other sources,
             use the appropriate tool to fetch that information.
@@ -169,10 +228,31 @@ async def process_message(user_message: str, agent: Agent = None, websocket: Web
             Always ensure if a confluence page, or jira issues needs to be created, the URL if returned on the response
             Any failure to return the URL, ensure you retry 2 times, or respond back with "UNABLE TO CREATE".
 
-            Format your response in markdown for better readability.
-            """
-        )
+            Format your response in markdown for better readability."""
+            print("Using default system prompt")
+
+        # Generate AI response with full context
+        full_message = f"""
+        Conversation Context:
+        {context_messages}
+
+        Current User Query: {user_message}
+
+        Available tools: {json.dumps(available_tools)}
+
+        {system_prompt}
+        """
+
+        response = await llm.generate_str(message=full_message)
         
+        # Track the interaction if LaunchDarkly is available
+        if tracker:
+            try:
+                tracker.track()
+                print("LaunchDarkly interaction tracked")
+            except Exception as e:
+                print(f"Error tracking LaunchDarkly interaction: {e}")
+
         # Add AI response to conversation memory
         conversation_memory.add_ai_message(response)
         
