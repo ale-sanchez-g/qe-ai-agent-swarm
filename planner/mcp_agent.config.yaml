@@ -1,4 +1,23 @@
 execution_engine: asyncio
+otel:
+  enabled: true
+  service_name: "mcp-planner"
+  otlp_endpoint: "https://noj90533.live.dynatrace.com/api/v2/otlp"
+  console_debug: true
+  sample_rate: 1.0
+
+logger:
+  transports: [console, file, http]  # You can use [file, console, http] for both
+  level: debug # Log level can be set to debug, info, warning, error, critical
+  http_timeout: 30.0
+  batch_size: 10
+  flush_interval: 2.0
+  path: "logs/mcp-agent.jsonl"  # Used for file transport
+  # For dynamic log filenames:
+  path_settings:
+    path_pattern: "logs/mcp-agent-{unique_id}.jsonl"
+    unique_id: "timestamp"  # Or "session_id"
+    timestamp_format: "%Y%m%d_%H%M%S"
 
 mcp:
   servers:
