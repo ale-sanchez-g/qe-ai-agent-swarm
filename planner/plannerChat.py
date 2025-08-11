@@ -244,7 +244,7 @@ async def process_message(user_message: str, agent: Agent = None, websocket: Web
             )
         
         # Build conversation context from memory
-        recent_messages = conversation_memory.get_recent_messages(5)
+        recent_messages = conversation_memory.get_recent_messages(15)
         
         # Format recent conversation history
         context_messages = "\n".join([
