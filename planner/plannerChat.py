@@ -88,8 +88,48 @@ else:
 # Initialize the MCP application with default configuration
 mcp_app = MCPApp(name="mcp-agent-research")
 
-# Initialize FastAPI application
-app = FastAPI(title="Planner Chat UI")
+# Initialize FastAPI application with full OpenAPI configuration
+app = FastAPI(
+    title="Planner Chat UI API",
+    description="""
+    Interactive Chat UI for LLM and MCP Integration
+    
+    This API provides a FastAPI-based web interface for interacting with MCP agents.
+    It includes conversation memory management, WebSocket communication, and file management capabilities.
+    
+    ## Features
+    - Interactive web chat interface with WebSocket communication
+    - Conversation memory management with SQLite backend
+    - Multi-MCP server integration (Atlassian, filesystem, fetch)
+    - LaunchDarkly AI integration for dynamic configuration
+    - Session management for multiple concurrent users
+    - File management for downloading and viewing reports
+    - Real-time status updates and system messages
+    """,
+    version="1.0.0",
+    contact={
+        "name": "QE AI Agent Swarm Team",
+        "email": "alejandro.sanchez-giraldo@devops1.com.au"
+    },
+    license_info={
+        "name": "MIT",
+        "url": "https://opensource.org/licenses/MIT"
+    },
+    openapi_tags=[
+        {
+            "name": "Chat Interface",
+            "description": "Main chat interface and health endpoints"
+        },
+        {
+            "name": "File Management", 
+            "description": "File download and report management endpoints"
+        },
+        {
+            "name": "Memory Management",
+            "description": "Session and conversation memory management"
+        }
+    ]
+)
 
 # Setup directory structure for templates and static files
 templates_dir = Path(__file__).parent / "templates"
@@ -260,12 +300,12 @@ async def process_message(user_message: str, agent: Agent = None, websocket: Web
 
 # FastAPI Route Handlers
 
-@app.get("/", response_class=HTMLResponse)
+@app.get("/", response_class=HTMLResponse, tags=["Chat Interface"], summary="Get main chat interface")
 async def get_chat_page(request: Request):
     """Serve the main chat interface."""
     return templates.TemplateResponse("chat.html", {"request": request})
 
-@app.get("/health")
+@app.get("/health", tags=["Chat Interface"], summary="Health check endpoint")
 async def health_check():
     """Health check endpoint for monitoring service status."""
     return {"status": "ok"}
@@ -334,7 +374,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
 # File Management Endpoints
 
-@app.get("/download/{filename}")
+@app.get("/download/{filename}", tags=["File Management"], summary="Download a specific file")
 async def download_file(filename: str):
     """
     Download a specific file from the output directory.
@@ -350,7 +390,7 @@ async def download_file(filename: str):
         return FileResponse(path=file_path, filename=filename, media_type='text/markdown')
     return {"error": "File not found"}
 
-@app.get("/list_reports")
+@app.get("/list_reports", tags=["File Management"], summary="List all available reports")
 async def list_reports():
     """
     List all available report files in the output directory.
@@ -374,14 +414,14 @@ async def list_reports():
     reports.sort(key=lambda x: x["created"], reverse=True)
     return {"reports": reports}
 
-@app.get("/reports", response_class=HTMLResponse)
+@app.get("/reports", response_class=HTMLResponse, tags=["File Management"], summary="Get reports viewing interface")
 async def get_reports_page(request: Request):
     """Serve the reports viewing interface."""
     return templates.TemplateResponse("reports.html", {"request": request})
 
 # Memory Management Endpoints
 
-@app.get("/memory/sessions")
+@app.get("/memory/sessions", tags=["Memory Management"], summary="List active conversation sessions")
 async def list_sessions():
     """
     List all active conversation sessions.
@@ -394,7 +434,7 @@ async def list_sessions():
         "count": len(session_manager.sessions)
     }
 
-@app.delete("/memory/session/{session_id}")
+@app.delete("/memory/session/{session_id}", tags=["Memory Management"], summary="Clear session memory")
 async def clear_session(session_id: str):
     """
     Clear conversation memory for a specific session.
@@ -410,7 +450,7 @@ async def clear_session(session_id: str):
         return {"message": f"Session {session_id} memory cleared"}
     return {"error": "Session not found"}
 
-@app.get("/memory/session/{session_id}/history")
+@app.get("/memory/session/{session_id}/history", tags=["Memory Management"], summary="Get session conversation history")
 async def get_session_history(session_id: str):
     """
     Retrieve conversation history for a specific session.
@@ -449,4 +489,7 @@ if __name__ == "__main__":
     print("Server will be available at: http://localhost:8000")
     print("Health check endpoint: http://localhost:8000/health")
     print("Reports interface: http://localhost:8000/reports")
+    print("API Documentation: http://localhost:8000/docs")
+    print("ReDoc Documentation: http://localhost:8000/redoc")
+    print("OpenAPI JSON: http://localhost:8000/openapi.json")
     uvicorn.run(app, host="0.0.0.0", port=8000)
