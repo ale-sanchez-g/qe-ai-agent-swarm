@@ -391,6 +391,38 @@ async def download_file(filename: str):
         return FileResponse(path=file_path, filename=filename, media_type='text/markdown')
     return {"error": "File not found"}
 
+@app.get("/report/{filename}", tags=["File Management"], summary="Get report content")
+async def get_report_content(filename: str):
+    """
+    Get the content of a specific report file from the output directory.
+    
+    Args:
+        filename: Name of the report file to read
+        
+    Returns:
+        JSON object containing the file content, metadata, or error message
+    """
+    file_path = Path("output") / filename
+    if not file_path.exists():
+        return {"error": "File not found"}
+    
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            content = f.read()
+        
+        # Get file metadata
+        stat = file_path.stat()
+        
+        return {
+            "filename": filename,
+            "content": content,
+            "size": stat.st_size,
+            "created": stat.st_mtime,
+            "modified": stat.st_mtime
+        }
+    except Exception as e:
+        return {"error": f"Failed to read file: {str(e)}"}
+
 @app.get("/list_reports", tags=["File Management"], summary="List all available reports")
 async def list_reports():
     """
@@ -419,6 +451,11 @@ async def list_reports():
 async def get_reports_page(request: Request):
     """Serve the reports viewing interface."""
     return templates.TemplateResponse("reports.html", {"request": request})
+
+@app.get("/view", response_class=HTMLResponse, tags=["File Management"], summary="View report content interface")
+async def get_report_view_page(request: Request):
+    """Serve the report content viewing interface."""
+    return templates.TemplateResponse("report_view.html", {"request": request})
 
 # Memory Management Endpoints
 
