@@ -16,9 +16,9 @@ import sqlite3
 import threading
 
 class ConversationMemory:
-    """Manages conversation memory for chat sessions"""
+    """Manages conversation memory for chat sessions with intelligent context management"""
     
-    def __init__(self, session_id: str, max_token_limit: int = 2000):
+    def __init__(self, session_id: str, max_token_limit: int = 4000):
         self.session_id = session_id
         self.max_token_limit = max_token_limit
         
@@ -27,7 +27,8 @@ class ConversationMemory:
         self.memory = ConversationSummaryBufferMemory(
             llm=self.llm,
             max_token_limit=max_token_limit,
-            return_messages=True
+            return_messages=True,
+            moving_summary_buffer="The conversation history has been summarized to preserve key context."
         )
         
         # Load existing conversation if exists
@@ -37,20 +38,69 @@ class ConversationMemory:
         """Add a user message to memory"""
         self.memory.chat_memory.add_user_message(message)
         self._save_conversation()
+        print(f"[DEBUG] Added user message. Total messages: {len(self.memory.chat_memory.messages)}")
     
     def add_ai_message(self, message: str):
         """Add an AI response to memory"""
         self.memory.chat_memory.add_ai_message(message)
         self._save_conversation()
+        print(f"[DEBUG] Added AI message. Total messages: {len(self.memory.chat_memory.messages)}")
+        
+        # Log if summary buffer is being used
+        if hasattr(self.memory, 'moving_summary_buffer') and self.memory.moving_summary_buffer:
+            print(f"[DEBUG] Summary buffer active: {len(self.memory.moving_summary_buffer)} chars")
     
     def get_conversation_context(self) -> str:
-        """Get the current conversation context for the LLM"""
-        return self.memory.buffer
+        """Get the current conversation context for the LLM using the buffer"""
+        # Use the summary buffer which automatically manages long conversations
+        if hasattr(self.memory, 'buffer') and self.memory.buffer:
+            return self.memory.buffer
+        
+        # Fallback to recent messages if buffer is empty
+        recent_messages = self.get_recent_messages_smart(15)
+        context_messages = "\n".join([
+            f"{'User' if isinstance(msg, HumanMessage) else 'Assistant'}: {msg.content}"
+            for msg in recent_messages
+        ])
+        return context_messages
     
-    def get_recent_messages(self, count: int = 5) -> List[BaseMessage]:
-        """Get recent messages from the conversation"""
+    def get_recent_messages(self, count: int = 10) -> List[BaseMessage]:
+        """Get recent messages from the conversation (legacy method)"""
         messages = self.memory.chat_memory.messages
         return messages[-count:] if len(messages) > count else messages
+    
+    def get_recent_messages_smart(self, count: int = 15) -> List[BaseMessage]:
+        """Get recent messages from the conversation with intelligent windowing"""
+        messages = self.memory.chat_memory.messages
+        
+        # If we have fewer messages than the window, return all
+        if len(messages) <= count:
+            return messages
+        
+        # Always include the first message (for context) and the recent messages
+        if len(messages) > count:
+            # Include first message + most recent (count-1) messages
+            first_message = [messages[0]]
+            recent_messages = messages[-(count-1):]
+            return first_message + recent_messages
+        
+        return messages[-count:]
+    
+    def get_full_conversation_context(self) -> str:
+        """Get comprehensive conversation context combining summary and recent messages"""
+        # Get the summary buffer if available
+        summary = ""
+        if hasattr(self.memory, 'moving_summary_buffer') and self.memory.moving_summary_buffer:
+            summary = f"Previous conversation summary: {self.memory.moving_summary_buffer}\n\n"
+        
+        # Get recent messages for immediate context
+        recent_messages = self.get_recent_messages_smart(10)
+        recent_context = "\n".join([
+            f"{'User' if isinstance(msg, HumanMessage) else 'Assistant'}: {msg.content}"
+            for msg in recent_messages
+        ])
+        
+        return f"{summary}Recent conversation:\n{recent_context}"
     
     def clear_memory(self):
         """Clear the conversation memory"""

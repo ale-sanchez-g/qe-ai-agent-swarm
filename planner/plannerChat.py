@@ -27,6 +27,9 @@ from mcp_agent.app import MCPApp
 from mcp_agent.agents.agent import Agent
 from mcp_agent.workflows.llm.augmented_llm_anthropic import AnthropicAugmentedLLM
 
+# LangChain imports for message types
+from langchain.schema import HumanMessage, AIMessage
+
 # LaunchDarkly AI Config
 import ldclient
 from ldclient import Context
@@ -243,14 +246,12 @@ async def process_message(user_message: str, agent: Agent = None, websocket: Web
                 websocket
             )
         
-        # Build conversation context from memory
-        recent_messages = conversation_memory.get_recent_messages(15)
+        # Build conversation context from memory using improved context management
+        conversation_context = conversation_memory.get_full_conversation_context()
         
-        # Format recent conversation history
-        context_messages = "\n".join([
-            f"{'User' if msg.type == 'user' else 'Assistant'}: {msg.content}"
-            for msg in recent_messages
-        ])
+        # Debug logging
+        print(f"[DEBUG] Session {session_id}: Processing message {len(conversation_memory.memory.chat_memory.messages)//2 + 1}")
+        print(f"[DEBUG] Context length: {len(conversation_context)} characters")
 
         # Get system prompt from LaunchDarkly or use default
         system_prompt = ""
@@ -264,7 +265,7 @@ async def process_message(user_message: str, agent: Agent = None, websocket: Web
         # Generate AI response with full context
         full_message = f"""
         Conversation Context:
-        {context_messages}
+        {conversation_context}
 
         Current User Query: {user_message}
 
@@ -463,12 +464,13 @@ async def get_session_history(session_id: str):
     """
     if session_id in session_manager.sessions:
         memory = session_manager.sessions[session_id]
-        messages = memory.get_recent_messages(50)  # Last 50 messages
+        messages = memory.get_recent_messages_smart(50)  # Last 50 messages with smart windowing
         return {
             "session_id": session_id,
+            "conversation_context": memory.get_full_conversation_context(),
             "messages": [
                 {
-                    "type": msg.type,
+                    "type": "human" if isinstance(msg, HumanMessage) else "ai",
                     "content": msg.content
                 }
                 for msg in messages
