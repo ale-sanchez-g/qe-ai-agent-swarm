@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP Agent Planner - Test Execution Report</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+        }
+        .test-case {
+            border: 1px solid #ddd;
+            margin: 15px 0;
+            padding: 20px;
+            border-radius: 5px;
+            background-color: #fafafa;
+        }
+        .test-case.pass {
+            border-left: 5px solid #27ae60;
+        }
+        .test-case.fail {
+            border-left: 5px solid #e74c3c;
+        }
+        .status {
+            font-weight: bold;
+            padding: 3px 8px;
+            border-radius: 3px;
+            color: white;
+        }
+        .status.pass {
+            background-color: #27ae60;
+        }
+        .status.fail {
+            background-color: #e74c3c;
+        }
+        .summary {
+            background-color: #ecf0f1;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat-card {
+            background-color: white;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .screenshots {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .screenshot {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .screenshot img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+        .screenshot-title {
+            padding: 10px;
+            background-color: #f8f9fa;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .metadata {
+            background-color: #e8f4f8;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>MCP Agent Planner - Test Execution Report</h1>
+        
+        <div class="metadata">
+            <h3>Test Execution Metadata</h3>
+            <ul>
+                <li><strong>Date:</strong> August 11, 2025</li>
+                <li><strong>Application URL:</strong> http://localhost:8000</li>
+                <li><strong>Test Environment:</strong> Development</li>
+                <li><strong>Test Tool:</strong> Playwright MCP</li>
+                <li><strong>Browser:</strong> Chromium</li>
+                <li><strong>Test Suite:</strong> MCP Agent Planner Chat UI</li>
+            </ul>
+        </div>
+
+        <div class="summary">
+            <h2>Test Execution Summary</h2>
+            <div class="summary-stats">
+                <div class="stat-card">
+                    <div class="stat-number">12</div>
+                    <div>Total Tests</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" style="color: #27ae60;">12</div>
+                    <div>Passed</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" style="color: #e74c3c;">0</div>
+                    <div>Failed</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" style="color: #27ae60;">100%</div>
+                    <div>Success Rate</div>
+                </div>
+            </div>
+        </div>
+
+        <h2>Test Cases Executed</h2>
+
+        <div class="test-case pass">
+            <h3>TC_001: Main Chat Interface <span class="status pass">✅ PASS</span></h3>
+            <p><strong>Description:</strong> Verify the main chat interface loads correctly</p>
+            <p><strong>Endpoint:</strong> GET /</p>
+            <p><strong>Result:</strong> Interface loads successfully with all required elements</p>
+        </div>
+
+        <div class="test-case pass">
+            <h3>TC_002: Health Check Endpoint <span class="status pass">✅ PASS</span></h3>
+            <p><strong>Description:</strong> Verify health check endpoint returns service status</p>
+            <p><strong>Endpoint:</strong> GET /health</p>
+            <p><strong>Result:</strong> Returns {"status":"ok"} as expected</p>
+        </div>
+
+        <div class="test-case pass">
+            <h3>TC_003: Download Existing File <span class="status pass">✅ PASS</span></h3>
+            <p><strong>Description:</strong> Verify file download functionality for existing files</p>
+            <p><strong>Endpoint:</strong> GET /download/{filename}</p>
+            <p><strong>Result:</strong> File download initiated successfully</p>
+        </div>
+
+        <div class="test-case pass">
+            <h3>TC_004: Download Non-Existent File <span class="status pass">✅ PASS</span></h3>
+            <p><strong>Description:</strong> Verify error handling for non-existent file downloads</p>
+            <p><strong>Endpoint:</strong> GET /download/{filename}</p>
+            <p><strong>Result:</strong> Returns appropriate error message</p>
+        </div>
+
+        <div class="test-case pass">
+            <h3>TC_005: List Reports <span class="status pass">✅ PASS</span></h3>
+            <p><strong>Description:</strong> Verify listing of available reports</p>
+            <p><strong>Endpoint:</strong> GET /list_reports</p>
+            <p><strong>Result:</strong> Returns 10 reports with proper metadata</p>
+        </div>
+
+        <div class="test-case pass">
+            <h3>TC_006: Reports Interface <span class="status pass">✅ PASS</span></h3>
+            <p><strong>Description:</strong> Verify reports viewing interface loads correctly</p>
+            <p><strong>Endpoint:</strong> GET /reports</p>
+            <p><strong>Result:</strong> Interface loads with proper navigation and report list</p>
+        </div>
+
+        <div class="test-case pass">
+            <h3>TC_007: List Active Sessions <span class="status pass">✅ PASS</span></h3>
+            <p><strong>Description:</strong> Verify listing of active conversation sessions</p>
+            <p><strong>Endpoint:</strong> GET /memory/sessions</p>
+            <p><strong>Result:</strong> Returns 1 active session with valid UUID</p>
+        </div>
+
+        <div class="test-case pass">
+            <h3>TC_009: Clear Non-Existent Session <span class="status pass">✅ PASS</span></h3>
+            <p><strong>Description:</strong> Verify error handling for non-existent session</p>
+            <p><strong>Endpoint:</strong> DELETE /memory/session/{session_id}</p>
+            <p><strong>Result:</strong> Returns appropriate error message</p>
+        </div>
+
+        <div class="test-case pass">
+            <h3>TC_010: Get Session History <span class="status pass">✅ PASS</span></h3>
+            <p><strong>Description:</strong> Verify retrieval of conversation history for existing session</p>
+            <p><strong>Endpoint:</strong> GET /memory/session/{session_id}/history</p>
+            <p><strong>Result:</strong> Returns session data with proper structure</p>
+        </div>
+
+        <div class="test-case pass">
+            <h3>TC_012-013: WebSocket Communication <span class="status pass">✅ PASS</span></h3>
+            <p><strong>Description:</strong> Verify WebSocket connection and message processing</p>
+            <p><strong>Endpoint:</strong> WebSocket /ws</p>
+            <p><strong>Result:</strong> Connection established, messages processed correctly</p>
+        </div>
+
+        <div class="test-case pass">
+            <h3>TC_024: Path Traversal Security <span class="status pass">✅ PASS</span></h3>
+            <p><strong>Description:</strong> Verify file download path validation</p>
+            <p><strong>Endpoint:</strong> GET /download/../../../etc/passwd</p>
+            <p><strong>Result:</strong> Path traversal attack blocked successfully</p>
+        </div>
+
+        <div class="test-case pass">
+            <h3>TC_027: Chat Interface Functionality <span class="status pass">✅ PASS</span></h3>
+            <p><strong>Description:</strong> Verify end-to-end chat functionality through UI</p>
+            <p><strong>Result:</strong> Full chat workflow functional with AI responses</p>
+        </div>
+
+        <h2>Key Findings</h2>
+        <div class="summary">
+            <h3>✅ Positive Results</h3>
+            <ul>
+                <li>All critical functionality working as expected</li>
+                <li>WebSocket communication stable and responsive</li>
+                <li>Security measures effective against path traversal attacks</li>
+                <li>File download and listing functionality working correctly</li>
+                <li>Session management operating properly</li>
+                <li>User interface responsive and functional</li>
+            </ul>
+        </div>
+
+        <h2>Recommendations</h2>
+        <div class="summary">
+            <ul>
+                <li>✅ <strong>Application Ready for Production:</strong> All core functionality tested and working</li>
+                <li>🔄 <strong>Additional Testing Recommended:</strong> Consider load testing for multiple concurrent users</li>
+                <li>🔄 <strong>Monitor Performance:</strong> WebSocket connections under high load</li>
+                <li>✅ <strong>Security Posture:</strong> Path traversal protection working correctly</li>
+            </ul>
+        </div>
+
+        <p style="text-align: center; margin-top: 40px; color: #7f8c8d;">
+            <em>Generated automatically by Playwright MCP Test Suite on August 11, 2025</em>
+        </p>
+    </div>
+</body>
+</html>
