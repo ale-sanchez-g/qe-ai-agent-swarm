@@ -1,5 +1,6 @@
 let socket;
 let currentSessionId = null;
+let isRobotAnimationActive = false;
 const messageInput = document.getElementById('message-input');
 const sendButton = document.getElementById('send-button');
 const chatMessages = document.getElementById('chat-messages');
@@ -95,13 +96,23 @@ function addSystemMessage(message) {
         message.includes("Connecting to LLM") || 
         message.includes("processing") ||
         message.toLowerCase().includes("working")) {
-        addRobotAnimation(message);
+        // Only add robot animation if one isn't already active
+        if (!isRobotAnimationActive) {
+            addRobotAnimation(message);
+        }
     } else {
         addMessage(message, 'system-message');
     }
 }
 
 function addRobotAnimation(statusText = "Processing your request...") {
+    // Prevent multiple robot animations
+    if (isRobotAnimationActive) {
+        return;
+    }
+    
+    isRobotAnimationActive = true;
+    
     const robotMessages = [
         "🤖 Analyzing your request...",
         "🔍 Searching for information...",
@@ -169,6 +180,9 @@ function removeRobotAnimation() {
             }
         }, 500);
     });
+    
+    // Reset the flag to allow new animations
+    isRobotAnimationActive = false;
 }
 
 function sendMessage() {
@@ -182,9 +196,11 @@ function sendMessage() {
         messageInput.value = '';
         sendButton.disabled = true;
         
-        // Show robot animation immediately after sending
+        // Show robot animation immediately after sending, but only if one isn't already active
         setTimeout(() => {
-            addRobotAnimation("🤖 Processing your request...");
+            if (!isRobotAnimationActive) {
+                addRobotAnimation("🤖 Processing your request...");
+            }
         }, 100);
         
         setTimeout(() => {
@@ -204,6 +220,8 @@ function clearCurrentSession() {
             addSystemMessage("Conversation memory cleared");
             // Clear local chat display
             chatMessages.innerHTML = '';
+            // Reset robot animation flag
+            isRobotAnimationActive = false;
         })
         .catch(error => {
             console.error('Error clearing session:', error);
