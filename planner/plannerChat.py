@@ -10,6 +10,7 @@ import uuid
 import os
 from typing import Dict, List
 from pathlib import Path
+import time
 
 # Load environment variables from .env file
 from dotenv import load_dotenv
@@ -20,12 +21,14 @@ from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import uvicorn
+from fastapi import Query
 
 # Local imports
 from memory_manager import session_manager
 from mcp_agent.app import MCPApp
 from mcp_agent.agents.agent import Agent
 from mcp_agent.workflows.llm.augmented_llm_anthropic import AnthropicAugmentedLLM
+from long_term_memory import LongTermMemory
 
 # LangChain imports for message types
 from langchain.schema import HumanMessage, AIMessage
@@ -192,6 +195,37 @@ class ConnectionManager:
 # Global connection manager instance
 manager = ConnectionManager()
 
+# Initialize Long-Term Memory (graceful fallback if deps are missing)
+try:
+    ltm = LongTermMemory(
+        persist_dir=Path(__file__).parent / "memory_index",
+        collection_name="planner_memories"
+    )
+    print("Long-term memory enabled (Chroma + sentence-transformers).")
+    # Optional: ingest existing reports once at startup
+    reports_dir = Path(__file__).parent / "output"
+    if reports_dir.exists():
+        try:
+            count = ltm.ingest_folder(reports_dir, glob_pattern="*.md", doc_type="report")
+            if count:
+                print(f"Ingested {count} report file(s) into long-term memory.")
+        except Exception as e:
+            print(f"[WARN] Initial ingest failed: {e}")
+    # Ingest curated RAG knowledge base (markdown + text)
+    rag_dir = Path(__file__).parent / "rag"
+    if rag_dir.exists():
+        try:
+            total = 0
+            total += ltm.ingest_folder(rag_dir, glob_pattern="**/*.md", doc_type="knowledge")
+            total += ltm.ingest_folder(rag_dir, glob_pattern="**/*.txt", doc_type="knowledge")
+            if total:
+                print(f"Ingested {total} knowledge file(s) into long-term memory.")
+        except Exception as e:
+            print(f"[WARN] Knowledge ingest failed: {e}")
+except Exception as e:
+    ltm = None
+    print(f"Long-term memory disabled: {e}")
+
 async def process_message(user_message: str, agent: Agent = None, websocket: WebSocket = None, session_id: str = None):
     """
     Process a user message through the MCP agent and LLM with conversation memory.
@@ -209,8 +243,7 @@ async def process_message(user_message: str, agent: Agent = None, websocket: Web
     # Retrieve or create conversation memory for this session
     conversation_memory = session_manager.get_or_create_session(session_id)
     
-    # Add user message to conversation history
-    conversation_memory.add_user_message(user_message)
+    # Don't add the user message directly; we'll record the full turn using save_context later
     
     # Initialize agent if not provided
     if not agent:
@@ -221,7 +254,7 @@ async def process_message(user_message: str, agent: Agent = None, websocket: Web
                                Answer user queries using the provided context and tools.
                                Be concise, helpful and accurate.
                                """,
-                server_names=["mcp-atlassian", "filesystem", "fetch"]
+                server_names=["mcp-atlassian", "fetch"]
             )
     
     async with agent:
@@ -249,6 +282,19 @@ async def process_message(user_message: str, agent: Agent = None, websocket: Web
         # Build conversation context from memory using improved context management
         conversation_context = conversation_memory.get_full_conversation_context()
         
+        # Retrieve long-term context (RAG) for this query
+        retrieved_snippets = []
+        if ltm:
+            try:
+                hits = ltm.search(user_message, k=5)
+                for h in hits:
+                    meta = h.get("metadata", {})
+                    prefix = f"[{meta.get('type','memo')}] {meta.get('filename', meta.get('path',''))}".strip()
+                    retrieved_snippets.append(f"{prefix}\n{h['text']}")
+            except Exception as e:
+                print(f"[WARN] LTM retrieval failed: {e}")
+        retrieved_context = "\n\n---\n".join(retrieved_snippets[:5]) if retrieved_snippets else ""
+
         # Debug logging
         print(f"[DEBUG] Session {session_id}: Processing message {len(conversation_memory.memory.chat_memory.messages)//2 + 1}")
         print(f"[DEBUG] Context length: {len(conversation_context)} characters")
@@ -267,6 +313,9 @@ async def process_message(user_message: str, agent: Agent = None, websocket: Web
         Conversation Context:
         {conversation_context}
 
+        Retrieved Knowledge:
+        {retrieved_context if retrieved_context else '(none)'}
+
         Current User Query: {user_message}
 
         Available tools: {json.dumps(available_tools)}
@@ -284,8 +333,16 @@ async def process_message(user_message: str, agent: Agent = None, websocket: Web
             except Exception as e:
                 print(f"Error tracking LaunchDarkly interaction: {e}")
 
-        # Add AI response to conversation memory
-        conversation_memory.add_ai_message(response)
+        # Record the full turn to keep summary accurate and persist to SQLite
+        try:
+            conversation_memory.record_turn(user_message, response)
+        except Exception as e:
+            # Fallback to legacy add_* if record_turn not available
+            try:
+                conversation_memory.add_user_message(user_message)
+                conversation_memory.add_ai_message(response)
+            except Exception as e2:
+                print(f"[ERROR] Failed to persist conversation turn: {e2}")
         
         # Save response to output file for persistence
         output_dir = Path("output")
@@ -296,6 +353,21 @@ async def process_message(user_message: str, agent: Agent = None, websocket: Web
             f.write(f"# Conversation: {session_id}\n\n")
             f.write(f"## User Query\n{user_message}\n\n")
             f.write(f"## Response\n{response}")
+
+        # Persist this turn in long-term memory
+        if ltm:
+            try:
+                ltm.upsert(
+                    texts=[f"Q: {user_message}\nA: {response}"],
+                    metadatas=[{
+                        "type": "dialogue",
+                        "session_id": session_id,
+                        "created_at": int(time.time())
+                    }],
+                    ids=[f"turn::{session_id}::{uuid.uuid4()}"]
+                )
+            except Exception as e:
+                print(f"[WARN] LTM upsert failed: {e}")
 
         return response
 
@@ -324,7 +396,10 @@ async def websocket_endpoint(websocket: WebSocket):
     and maintains conversation state for connected clients.
     """
     await manager.connect(websocket)
-    session_id = manager.get_session_id(websocket)
+    provided_session_id = websocket.query_params.get("session_id") if hasattr(websocket, "query_params") else None
+    session_id = provided_session_id or manager.get_session_id(websocket)
+    # Ensure mapping uses the chosen session_id
+    manager.connection_sessions[websocket] = session_id
     
     # Initialize agent for this session
     agent = None
@@ -514,6 +589,28 @@ async def get_session_history(session_id: str):
             ]
         }
     return {"error": "Session not found"}
+
+@app.get("/memory/longterm/search", tags=["Memory Management"], summary="Search long-term memory (RAG index)")
+async def search_longterm(q: str = Query(..., min_length=2), k: int = 5):
+    """Semantic search across the long-term memory index."""
+    if not ltm:
+        return {"error": "Long-term memory not available"}
+    try:
+        results = ltm.search(q, k=k)
+        return {
+            "query": q,
+            "results": [
+                {
+                    "id": r.get("id"),
+                    "distance": r.get("distance"),
+                    "metadata": r.get("metadata"),
+                    "preview": (r.get("text") or "")[:400]
+                }
+                for r in results
+            ]
+        }
+    except Exception as e:
+        return {"error": f"Search failed: {str(e)}"}
 
 # Application Entry Point
 

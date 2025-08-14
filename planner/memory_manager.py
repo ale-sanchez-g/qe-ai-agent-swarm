@@ -49,9 +49,28 @@ class ConversationMemory:
         # Log if summary buffer is being used
         if hasattr(self.memory, 'moving_summary_buffer') and self.memory.moving_summary_buffer:
             print(f"[DEBUG] Summary buffer active: {len(self.memory.moving_summary_buffer)} chars")
+
+    def record_turn(self, user_message: str, ai_message: str):
+        """Record a full user->assistant turn using save_context to update summary buffer."""
+        try:
+            self.memory.save_context(
+                inputs={"input": user_message},
+                outputs={"output": ai_message}
+            )
+            self._save_conversation()
+            print(f"[DEBUG] Recorded turn. Total messages: {len(self.memory.chat_memory.messages)}")
+            if hasattr(self.memory, 'moving_summary_buffer') and self.memory.moving_summary_buffer:
+                print(f"[DEBUG] Summary length: {len(self.memory.moving_summary_buffer)} chars")
+        except Exception as e:
+            print(f"[ERROR] record_turn failed: {e}")
     
     def get_conversation_context(self) -> str:
         """Get the current conversation context for the LLM using the buffer"""
+        # Ensure memory variables are loaded to keep summary current
+        try:
+            _ = self.memory.load_memory_variables({})
+        except Exception:
+            pass
         # Use the summary buffer which automatically manages long conversations
         if hasattr(self.memory, 'buffer') and self.memory.buffer:
             return self.memory.buffer

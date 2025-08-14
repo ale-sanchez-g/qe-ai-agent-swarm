@@ -12,6 +12,7 @@ redis
 sqlalchemy
 uuid
 chromadb
+sentence-transformers
 launchdarkly-server-sdk
 launchdarkly-server-sdk-ai
 launchdarkly-observability
