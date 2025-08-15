@@ -31,13 +31,14 @@ from mcp_agent.workflows.llm.augmented_llm_anthropic import AnthropicAugmentedLL
 from long_term_memory import LongTermMemory
 
 # LangChain imports for message types
-from langchain.schema import HumanMessage, AIMessage
+from langchain.schema import HumanMessage
 
 # LaunchDarkly AI Config
 import ldclient
 from ldclient import Context
 from ldclient.config import Config
 from ldai.client import LDAIClient, AIConfig, ModelConfig, LDMessage, ProviderConfig
+from ldai.tracker import TokenUsage
 
 # Initialize LaunchDarkly client for AI integration
 # Get SDK key from env variable
@@ -324,6 +325,24 @@ async def process_message(user_message: str, agent: Agent = None, websocket: Web
         """
 
         response = await llm.generate_str(message=full_message)
+        
+        # Track token usage if LaunchDarkly tracker is available
+        if tracker:
+            try:
+                # Create an instance of TokenUsage with actual values from the model generation
+                # Note: These values should ideally come from the LLM response metadata
+                # For now, we'll estimate based on message lengths (rough approximation)
+                input_tokens = len(full_message.split()) * 1.3  # Approximate tokens from words
+                output_tokens = len(response.split()) * 1.3     # Approximate tokens from words  
+                total_tokens = int(input_tokens + output_tokens)
+                
+                tokens = TokenUsage(total_tokens, int(input_tokens), int(output_tokens))
+                tracker.track_tokens(tokens)
+                
+                print(f"[DEBUG] Token usage tracked - Input: {int(input_tokens)}, Output: {int(output_tokens)}, Total: {total_tokens}")
+            except Exception as e:
+                print(f"Error tracking token usage: {e}")
+        
         # Track the interaction if LaunchDarkly is available
         if tracker:
             try:
