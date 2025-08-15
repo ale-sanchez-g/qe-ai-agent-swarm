@@ -9,8 +9,9 @@
 ## Prompt
 
 ```
-Execute the test cases from the prompt using the playwright MCP. 
+Execute all the test cases from the prompt using the playwright MCP. 
 
+- Ensure you can work with the playwright MCP and do not install playwright
 - Do not start the application as it is already running
 - Refer to the Application URL on the prompt 
 - Capture Screenshots and test evidence in the planner/test/{timestamp} folder

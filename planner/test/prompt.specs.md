@@ -17,6 +17,15 @@ The MCP Agent Planner is a FastAPI-based web interface for interacting with MCP 
 ## Application URL
 http://localhost:8000
 
+## Test Suite Sumamry
+
+- API Endpoint Testing (11 test cases)
+- WebSocket Communication Testing (4 test cases)
+- Integration Testing (5 test cases)
+- Performance Testing (2 test cases)
+- Security Testing (2 test cases)
+- Error Handling and Edge Cases (2 test cases)
+- User Interface Testing (2 test cases)
 
 ### Key Features
 - Interactive web chat interface with WebSocket communication

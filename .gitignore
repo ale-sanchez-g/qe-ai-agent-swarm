@@ -181,3 +181,6 @@ cython_debug/
 */memory_index/
 output/
 logs/
+
+# MCP folders
+*-mcp/
