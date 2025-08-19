@@ -35,6 +35,32 @@ The Planner MCP Agent is an advanced interactive chat interface built with FastA
 
 ## Installation
 
+### Option 1: Docker Deployment (Recommended)
+
+The easiest way to deploy the planner chat UI is using Docker:
+
+```sh
+# Quick start
+cp .env.example .env  # Edit with your API keys
+./deploy.sh deploy    # Automated deployment
+
+# Or using make
+make deploy
+```
+
+**Required Environment Variables:**
+- `ANTHROPIC_API_KEY`: Your Anthropic API key (required)
+- `LAUNCHDARKLY_SDK_KEY`: LaunchDarkly SDK key (optional)
+
+**Access Points:**
+- Main Chat Interface: http://localhost:8000
+- API Documentation: http://localhost:8000/docs
+- Reports Interface: http://localhost:8000/reports
+
+For detailed Docker deployment instructions, see [DOCKER_DEPLOYMENT.md](DOCKER_DEPLOYMENT.md).
+
+### Option 2: Local Development Setup
+
 1. Ensure Python 3.12 is installed on your system
 2. Set up a virtual environment:
 ```sh
