@@ -1,0 +1,10 @@
+Setting up Chroma persistent client
+
+1. Ensure `chromadb` and `sentence-transformers` are installed.
+2. Choose a persistent directory, e.g., `planner/memory_index`.
+3. Initialize the client:
+   - client = chromadb.PersistentClient(path=persist_dir)
+   - collection = client.get_or_create_collection(name="planner_memories", metadata={"hnsw:space": "cosine"})
+4. Encode text with `SentenceTransformer('all-MiniLM-L6-v2')`.
+5. Upsert documents with ids, documents, embeddings, and metadatas.
+6. Query using `collection.query(query_embeddings=[...], n_results=5)`.

@@ -177,4 +177,10 @@ cython_debug/
 */*.secrets.*
 */*.env
 */mcpagent/
+*/memory/
+*/memory_index/
 output/
+logs/
+
+# MCP folders
+*-mcp/

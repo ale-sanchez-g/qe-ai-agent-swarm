@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP Planner Chat</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
+    <style>
+        .view-reports-link {
+            margin-left: 15px;
+            color: #fff;
+            text-decoration: none;
+            background-color: #0e2839;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 14px;
+        }
+        .view-reports-link:hover {
+            background-color: #0e2839;
+        }
+        
+        /* Enhanced Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background: rgba(15, 27, 45, 0.8);
+            backdrop-filter: blur(20px);
+            animation: modalFadeIn 0.3s ease-out;
+        }
+        
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        
+        .modal-content {
+            background: linear-gradient(135deg, #ffffff 0%, #f8faff 100%);
+            margin: 10% auto;
+            padding: 0;
+            border: none;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 
+                0 25px 50px rgba(0, 0, 0, 0.3),
+                0 0 0 1px rgba(255, 255, 255, 0.2);
+            animation: modalSlideIn 0.4s ease-out;
+            overflow: hidden;
+        }
+        
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px) scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        
+        .modal-header {
+            padding: 25px 25px 15px 25px;
+            margin-bottom: 0;
+            border-bottom: 1px solid rgba(230, 240, 255, 0.8);
+            background: linear-gradient(135deg, #f8faff 0%, #f0f7ff 100%);
+            position: relative;
+        }
+        
+        .modal-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .modal-header h2 {
+            font-size: 20px;
+            margin: 0;
+            color: #2c3e50;
+            font-weight: 700;
+            background: linear-gradient(135deg, #2c3e50 0%, #4a5568 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .modal-input {
+            width: 100%;
+            padding: 16px 20px;
+            margin: 20px 25px;
+            margin-bottom: 25px;
+            border: 2px solid rgba(230, 240, 255, 0.8);
+            border-radius: 12px;
+            font-size: 15px;
+            font-family: inherit;
+            background: rgba(255, 255, 255, 0.9);
+            transition: all 0.3s ease;
+            outline: none;
+            box-sizing: border-box;
+            width: calc(100% - 50px);
+        }
+        
+        .modal-input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            background: rgba(255, 255, 255, 1);
+        }
+        
+        .modal-input::placeholder {
+            color: #a0a9c0;
+            font-weight: 400;
+        }
+        
+        .modal-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            padding: 0 25px 25px 25px;
+            background: linear-gradient(135deg, #ffffff 0%, #f8faff 100%);
+        }
+        
+        .modal-button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .modal-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .modal-submit {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .modal-cancel {
+            background: linear-gradient(135deg, #bcc3d4 0%, #c8d0e0 100%);
+            color: #4a5568;
+            box-shadow: 0 4px 15px rgba(188, 195, 212, 0.2);
+        }
+        
+        .modal-submit:hover {
+            background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(102, 126, 234, 0.4);
+        }
+        
+        .modal-cancel:hover {
+            background: linear-gradient(135deg, #a8b1c4 0%, #b8c2d4 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(168, 177, 196, 0.3);
+        }
+        
+        .modal-button:hover::before {
+            left: 100%;
+        }
+        
+        .modal-button:active {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <!-- Custom Modal -->
+    <div id="customModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">Enter Information</h2>
+            </div>
+            <input type="text" id="modal-input" class="modal-input" placeholder="Enter information">
+            <div class="modal-buttons">
+                <button id="modal-cancel" class="modal-button modal-cancel">Cancel</button>
+                <button id="modal-submit" class="modal-button modal-submit">Submit</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="chat-container">
+        <div class="chat-header">
+            <img src="/static/images/devops1-logo-reversed.svg" alt="DO1-logo" style="height: 40%;">
+            <h1>MCP Planner Chat</h1>
+            <div style="display: flex; align-items: center;">
+                <div class="connection-status">
+                    <span id="status-indicator" class="status-disconnected"></span>
+                    <span id="status-text">Disconnected</span>
+                </div>
+                <a href="/reports" class="quick-action-button">View Reports</a>
+            </div>
+        </div>
+        
+        <div class="quick-actions">
+            <button id="project-summary" class="quick-action-button">Provide project summary</button>
+            <button id="confluence-button" class="quick-action-button">Find information from a Confluence page</button>
+        </div>
+        
+        <div class="chat-messages" id="chat-messages"></div>
+        
+        <div class="chat-input-container">
+            <textarea id="message-input" placeholder="Type your message here..." rows="3"></textarea>
+            <button id="send-button" disabled>Send</button>
+        </div>
+    </div>
+
+    <script src="/static/js/chat.js"></script>
+</body>
+</html>
