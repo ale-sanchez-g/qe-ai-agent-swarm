@@ -1,0 +1,33 @@
+[tool.poetry]
+name = "hello-python-ai"
+version = "0.1.0"
+description = "Hello LaunchDarkly for Python AI - OpenAI"
+authors = ["LaunchDarkly <dev@launchdarkly.com>"]
+license = "Apache-2.0"
+readme = "README.md"
+packages = [ { include = "examples" } ]
+
+[tool.poetry.scripts]
+bedrock-example = 'examples.bedrock:main'
+openai-example = 'examples.openai:main'
+langchain-example = 'examples.langchain:main'
+
+[tool.poetry.dependencies]
+python = "^3.9"
+launchdarkly-server-sdk-ai = ">=0.6.0,<1.0.0"
+
+boto3 = { version = ">=0.2.0", optional = true }
+openai = { version = ">=0.2.0", optional = true }
+langchain = {version = "^0.3.0", optional = true}
+langchain-aws = {version = "^0.2.30", optional = true}
+langchain-google-genai = {version = "^2.1.9", optional = true}
+langchain-openai = {version = "^0.3.30", optional = true}
+
+[tool.poetry.extras]
+bedrock = ["boto3"]
+openai = ["openai"]
+langchain = ["langchain", "langchain-openai", "langchain-google-genai", "langchain-aws"]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
