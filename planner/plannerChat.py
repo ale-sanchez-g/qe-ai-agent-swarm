@@ -631,6 +631,94 @@ async def search_longterm(q: str = Query(..., min_length=2), k: int = 5):
     except Exception as e:
         return {"error": f"Search failed: {str(e)}"}
 
+# Debug Endpoints
+
+@app.get("/debug/tools", tags=["Debug"], summary="List available MCP tools")
+async def list_available_tools():
+    """
+    List all available tools from connected MCP servers.
+    
+    Returns:
+        JSON object with tools from each server
+    """
+    try:
+        async with mcp_app.run() as agent_app:
+            agent = Agent(
+                name="DebugAgent",
+                instruction="Debug agent for listing tools",
+                server_names=["mcp-atlassian", "filesystem", "fetch"]
+            )
+            
+            async with agent:
+                # Get available tools
+                tools_result = await agent.list_tools()
+                
+                # Get more detailed server information
+                server_status = {}
+                connected_servers = []
+                failed_servers = []
+                
+                if hasattr(agent, 'mcp_aggregator') and hasattr(agent.mcp_aggregator, 'server_managers'):
+                    for server_name, manager in agent.mcp_aggregator.server_managers.items():
+                        try:
+                            # Check if server is actually connected
+                            if hasattr(manager, 'client') and manager.client:
+                                connected_servers.append(server_name)
+                                server_status[server_name] = "connected"
+                            else:
+                                failed_servers.append(server_name)
+                                server_status[server_name] = "disconnected"
+                        except Exception as e:
+                            failed_servers.append(server_name)
+                            server_status[server_name] = f"error: {str(e)}"
+                
+                if tools_result:
+                    tools_data = tools_result.model_dump()
+                    
+                    # Group tools by server (based on tool name prefixes)
+                    tools_by_server = {}
+                    for tool in tools_data.get("tools", []):
+                        tool_name = tool.get("name", "")
+                        if tool_name.startswith("fetch_"):
+                            server = "fetch"
+                        elif tool_name.startswith("filesystem_"):
+                            server = "filesystem"
+                        elif tool_name.startswith("atlassian_") or tool_name.startswith("jira_") or tool_name.startswith("confluence_"):
+                            server = "mcp-atlassian"
+                        else:
+                            server = "unknown"
+                        
+                        if server not in tools_by_server:
+                            tools_by_server[server] = []
+                        tools_by_server[server].append(tool)
+                    
+                    return {
+                        "status": "success",
+                        "tools": tools_data,
+                        "tool_count": len(tools_data.get("tools", [])),
+                        "tools_by_server": tools_by_server,
+                        "server_status": server_status,
+                        "connected_servers": connected_servers,
+                        "failed_servers": failed_servers,
+                        "requested_servers": ["mcp-atlassian", "filesystem", "fetch"]
+                    }
+                else:
+                    return {
+                        "status": "no_tools",
+                        "message": "No tools available or agent not properly initialized",
+                        "server_status": server_status,
+                        "connected_servers": connected_servers,
+                        "failed_servers": failed_servers,
+                        "requested_servers": ["mcp-atlassian", "filesystem", "fetch"]
+                    }
+                    
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to list tools: {str(e)}",
+            "error_type": type(e).__name__
+        }
+
 # Application Entry Point
 
 if __name__ == "__main__":    

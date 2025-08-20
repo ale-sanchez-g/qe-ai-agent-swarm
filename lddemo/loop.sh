@@ -1,6 +1,6 @@
 #!/bin/bash
 
-for i in {1..5}; do
+for i in {1..50}; do
     echo "Running iteration $i..."
     poetry run bedrock-example
     echo "Completed iteration $i"

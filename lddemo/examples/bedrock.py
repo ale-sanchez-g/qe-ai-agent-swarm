@@ -137,6 +137,15 @@ def main():
                 system=[{'text': msg.content} for msg in config_value.messages if msg.role == 'system'],
             )
         )
+        # Append the AI response to the conversation history
+        observe.record_log(f"--- AI Response: {converse['output']['message']['content'][0]['text']}", logging.INFO, {"customID": SESSION_TRACE_ID})
+        observe.record_log(f"--- AI Configuration", logging.INFO, {
+            "customID": SESSION_TRACE_ID,
+            "model": config_value.model.name,
+            "provider": config_value.provider.name,
+            "messages": [msg.content for msg in config_value.messages]
+            })
+    
     except Exception as e:
         tracker.track_error()
         observe.record_log(f"--- Error calling Bedrock: {e}", logging.ERROR, {"customID": SESSION_TRACE_ID})
@@ -144,8 +153,6 @@ def main():
         # print(f"--- Model ID used: {config_value.model.name}")        
         # raise
 
-    # Append the AI response to the conversation history
-    # print("AI Response:\n", converse["output"]["message"]["content"][0]["text"])
 
     # Continue the conversation by adding user input to the messages list and invoking the LLM again.
     print("Success.")
