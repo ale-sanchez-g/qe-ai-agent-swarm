@@ -204,14 +204,14 @@ try:
     )
     print("Long-term memory enabled (Chroma + sentence-transformers).")
     # Optional: ingest existing reports once at startup
-    reports_dir = Path(__file__).parent / "output"
-    if reports_dir.exists():
-        try:
-            count = ltm.ingest_folder(reports_dir, glob_pattern="*.md", doc_type="report")
-            if count:
-                print(f"Ingested {count} report file(s) into long-term memory.")
-        except Exception as e:
-            print(f"[WARN] Initial ingest failed: {e}")
+    # reports_dir = Path(__file__).parent / "output"
+    # if reports_dir.exists():
+    #     try:
+    #         count = ltm.ingest_folder(reports_dir, glob_pattern="*.md", doc_type="report")
+    #         if count:
+    #             print(f"Ingested {count} report file(s) into long-term memory.")
+    #     except Exception as e:
+    #         print(f"[WARN] Initial ingest failed: {e}")
     # Ingest curated RAG knowledge base (markdown + text)
     rag_dir = Path(__file__).parent / "rag"
     if rag_dir.exists():
