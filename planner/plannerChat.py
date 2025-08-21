@@ -6,6 +6,7 @@ It includes conversation memory management, WebSocket communication, and file ma
 """
 
 import json
+import random
 import uuid
 import os
 from typing import Dict, List
@@ -50,19 +51,23 @@ if not sdk_key:
     tracker = None
 else:
     try:
-        ldclient.set_config(Config(sdk_key=sdk_key))
-        ld_client = ldclient.get()
+        ldclient.set_config(Config(sdk_key))
         
         # Wait for the client to initialize
-        if ld_client.is_initialized():
+        if ldclient.get().is_initialized():
             print("LaunchDarkly client initialized successfully")
         else:
             print("Warning: LaunchDarkly client failed to initialize")
             
-        aiclient = LDAIClient(ld_client)
+        aiclient = LDAIClient(ldclient.get())
+        # List of 20 pilot users
+        array = ["user-1", "user-2", "user-3", "user-4", "user-5", "user-6", "user-7", "user-8", "user-9", "user-10", "user-11", "user-12", "user-13", "user-14", "user-15", "user-16", "user-17", "user-18", "user-19", "user-20"]
 
-        context = Context.builder("chat-bot-123abc") \
-            .set("firstName", "AJ") \
+        # select random user
+        user_id = random.choice(array)
+
+        context = Context.builder(f"chat-bot-{user_id}") \
+            .set("firstName", user_id) \
             .set("lastName", "Smith") \
             .build()
 
@@ -82,7 +87,7 @@ else:
         
         # Debug: Print the system message content
         if ai_chat_config.messages and len(ai_chat_config.messages) > 0:
-            print(f"System message from LaunchDarkly")
+            print(f"System message from LaunchDarkly config: {ai_chat_config.messages[0].content[:100]}...")  # Print first 100 chars
         else:
             print("No system message found in LaunchDarkly config")
             
@@ -304,10 +309,10 @@ async def process_message(user_message: str, agent: Agent = None, websocket: Web
         system_prompt = ""
         if ai_chat_config and ai_chat_config.messages and len(ai_chat_config.messages) > 0:
             system_prompt = ai_chat_config.messages[0].content
-            # print(f"Using LaunchDarkly system prompt: {system_prompt[:100]}...")
+            print(f"[DEBUG] [1123] Using LaunchDarkly system prompt: {system_prompt[:100]}...")
         else:
             system_prompt = """ONLY RESPOND WITH `LET ME CONNECT YOU WITH A HUMAN`"""
-            print("Using default system prompt")
+            print("[DEBUG] Using default system prompt")
 
         # Generate AI response with full context
         full_message = f"""
