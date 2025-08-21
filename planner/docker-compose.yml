@@ -6,6 +6,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      tags:
+        - "planner-chat-ui:latest"
+        - "planner-chat-ui:${BUILD_TAG:-$(date +%Y%m%d-%H%M%S)}"
+    image: planner-chat-ui:${BUILD_TAG:-latest}
     container_name: planner-chat-ui
     ports:
       - "8000:8000"

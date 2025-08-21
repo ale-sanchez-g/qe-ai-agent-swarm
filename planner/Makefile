@@ -1,5 +1,5 @@
 # Makefile for MCP Planner Chat UI Docker deployment
-.PHONY: help build deploy start stop restart logs status clean dev prod
+.PHONY: help build deploy start stop restart logs status clean dev prod rebuild force-build
 
 # Default target
 help:
@@ -7,17 +7,19 @@ help:
 	@echo "======================================"
 	@echo ""
 	@echo "Available targets:"
-	@echo "  make deploy     - Full deployment (build + start + health check)"
-	@echo "  make build      - Build Docker image"
-	@echo "  make start      - Start application"
-	@echo "  make stop       - Stop application"
-	@echo "  make restart    - Restart application"
-	@echo "  make logs       - Show application logs"
-	@echo "  make status     - Check application status"
-	@echo "  make clean      - Clean up Docker resources"
-	@echo "  make dev        - Development deployment"
-	@echo "  make prod       - Production deployment"
-	@echo "  make setup      - Initial setup (copy config files)"
+	@echo "  make deploy       - Full deployment (build + start + health check)"
+	@echo "  make build        - Build Docker image"
+	@echo "  make rebuild      - Force rebuild without cache"
+	@echo "  make force-build  - Force rebuild with unique tag"
+	@echo "  make start        - Start application"
+	@echo "  make stop         - Stop application"
+	@echo "  make restart      - Restart application"
+	@echo "  make logs         - Show application logs"
+	@echo "  make status       - Check application status"
+	@echo "  make clean        - Clean up Docker resources"
+	@echo "  make dev          - Development deployment"
+	@echo "  make prod         - Production deployment"
+	@echo "  make setup        - Initial setup (copy config files)"
 	@echo ""
 
 # Setup configuration files
@@ -49,6 +51,19 @@ prod: setup
 build:
 	@echo "Building Docker image..."
 	./deploy.sh build
+
+# Force rebuild without cache
+rebuild:
+	@echo "Force rebuilding Docker image without cache..."
+	docker-compose build --no-cache --pull
+	@echo "Rebuild complete!"
+
+# Force rebuild with unique tag
+force-build:
+	@echo "Force building with unique tag..."
+	@BUILD_TAG=$$(date +%Y%m%d-%H%M%S)-$$(git rev-parse --short HEAD 2>/dev/null || echo "local") && \
+	docker build --no-cache --pull -t planner-chat-ui:$$BUILD_TAG -t planner-chat-ui:latest . && \
+	echo "Built image with tag: planner-chat-ui:$$BUILD_TAG"
 
 # Deploy application
 deploy: setup

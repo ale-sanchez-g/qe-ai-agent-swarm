@@ -112,8 +112,17 @@ create_directories() {
 build_image() {
     print_status "Building Docker image..."
     
-    if docker build -t planner-chat-ui:latest .; then
-        print_success "Docker image built successfully"
+    # Generate unique tag based on timestamp and git commit (if available)
+    TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+    GIT_COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "no-git")
+    BUILD_TAG="${TIMESTAMP}-${GIT_COMMIT}"
+    
+    print_status "Building with tag: planner-chat-ui:${BUILD_TAG}"
+    
+    if docker build -t "planner-chat-ui:${BUILD_TAG}" -t "planner-chat-ui:latest" .; then
+        print_success "Docker image built successfully with tag: ${BUILD_TAG}"
+        # Export the tag for use in docker-compose
+        export BUILD_TAG
     else
         print_error "Failed to build Docker image"
         exit 1
@@ -127,8 +136,8 @@ deploy_compose() {
     # Stop existing containers
     docker-compose down --remove-orphans 2>/dev/null || docker compose down --remove-orphans 2>/dev/null || true
     
-    # Start new containers
-    if docker-compose up -d 2>/dev/null || docker compose up -d 2>/dev/null; then
+    # Build and start new containers with no cache
+    if docker-compose build --no-cache --pull && (docker-compose up -d 2>/dev/null || docker compose up -d 2>/dev/null); then
         print_success "Application deployed successfully"
     else
         print_error "Failed to deploy with Docker Compose"
