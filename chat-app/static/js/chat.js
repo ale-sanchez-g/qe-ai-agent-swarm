@@ -8,6 +8,8 @@ class ChatApp {
         this.typingIndicator = document.getElementById('typing-indicator');
         this.clearChatButton = document.getElementById('clear-chat');
         this.healthCheckButton = document.getElementById('health-check');
+        this.debugConfigButton = document.getElementById('debug-config');
+        this.logoutButton = document.getElementById('logout-button');
         this.statusIndicator = document.getElementById('status-indicator');
         
         this.isTyping = false;
@@ -27,6 +29,12 @@ class ChatApp {
 
         this.clearChatButton.addEventListener('click', () => this.clearChat());
         this.healthCheckButton.addEventListener('click', () => this.checkHealth());
+        if (this.debugConfigButton) {
+            this.debugConfigButton.addEventListener('click', () => this.debugConfig());
+        }
+        if (this.logoutButton) {
+            this.logoutButton.addEventListener('click', () => this.logout());
+        }
 
         // Auto-resize textarea
         this.messageInput.addEventListener('input', () => this.autoResizeInput());
@@ -69,6 +77,15 @@ class ChatApp {
                 this.addMessage(data.response, 'assistant');
                 this.showToast('Response received successfully', 'success');
             } else {
+                // Handle authentication errors
+                if (response.status === 401) {
+                    this.showToast('Session expired. Please login again.', 'error');
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 2000);
+                    return;
+                }
+                
                 // Show error message
                 this.addMessage(data.error || 'An error occurred. Please try again.', 'assistant', true);
                 this.showToast('Error: ' + (data.error || 'Failed to send message'), 'error');
@@ -215,6 +232,13 @@ class ChatApp {
                 this.messageCount = 1; // Reset to just the welcome message
                 this.showToast('Chat history cleared successfully', 'success');
             } else {
+                if (response.status === 401) {
+                    this.showToast('Session expired. Please login again.', 'error');
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 2000);
+                    return;
+                }
                 this.showToast('Failed to clear chat history', 'error');
             }
         } catch (error) {
@@ -253,6 +277,94 @@ ${data.launchdarkly_connected ? '✅' : '❌'} LaunchDarkly: ${data.launchdarkly
             console.error('Health check error:', error);
             this.updateStatusIndicator('error');
             this.showToast('Unable to perform health check - Network error', 'error');
+        }
+    }
+
+    async logout() {
+        if (!confirm('Are you sure you want to logout? This will clear your chat history and return you to the login page.')) {
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/logout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+
+            if (response.ok) {
+                this.showToast('Logging out...', 'info');
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 1000);
+            } else {
+                this.showToast('Logout failed. Redirecting anyway...', 'warning');
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 2000);
+            }
+        } catch (error) {
+            console.error('Logout error:', error);
+            this.showToast('Network error during logout. Redirecting...', 'warning');
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 2000);
+        }
+    }
+
+    async debugConfig() {
+        try {
+            const response = await fetch('/api/debug');
+            const data = await response.json();
+
+            if (response.ok) {
+                const debugInfo = `
+🔍 Debug Configuration Information:
+
+📋 LaunchDarkly Configuration:
+• AI Config Key: ${data.ai_config_key}
+• Config Enabled: ${data.config_enabled}
+• Model: ${data.config_model || 'None'}
+• Provider: ${data.config_provider || 'None'}
+• Using Fallback: ${data.using_fallback}
+• SDK Initialized: ${data.sdk_initialized}
+
+👤 User Context:
+• User ID: ${data.user_context?.key || 'Unknown'}
+• Name: ${data.user_context?.name || 'Unknown'}
+• Kind: ${data.user_context?.kind || 'Unknown'}
+
+🌐 Browser Details:
+• Browser: ${data.session_info?.browser_details?.browserName || 'Unknown'} ${data.session_info?.browser_details?.browserVersion || ''}
+• Platform: ${data.session_info?.browser_details?.platform || 'Unknown'}
+• Device: ${data.session_info?.browser_details?.deviceType || 'Unknown'}
+• Resolution: ${data.session_info?.browser_details?.screenResolution || 'Unknown'}
+• Language: ${data.session_info?.browser_details?.language || 'Unknown'}
+• Timezone: ${data.session_info?.browser_details?.timezone || 'Unknown'}
+
+⚙️ Environment:
+• LD SDK Key: ${data.environment_vars?.LAUNCHDARKLY_SDK_KEY || 'Not Set'}
+• AI Config Key: ${data.environment_vars?.LAUNCHDARKLY_AI_CONFIG_KEY || 'Not Set'}
+
+📅 Session Info:
+• Session Start: ${data.session_info?.session_start || 'Unknown'}
+                `.trim();
+                
+                this.showToast(debugInfo, 'info');
+            } else {
+                if (response.status === 401) {
+                    this.showToast('Session expired. Please login again.', 'error');
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 2000);
+                    return;
+                }
+                this.showToast('Debug check failed: ' + (data.error || 'Unknown error'), 'error');
+            }
+        } catch (error) {
+            console.error('Debug check error:', error);
+            this.showToast('Unable to perform debug check - Network error', 'error');
         }
     }
 
@@ -304,9 +416,9 @@ ${data.launchdarkly_connected ? '✅' : '❌'} LaunchDarkly: ${data.launchdarkly
                 toast.className = 'toast border-info';
         }
 
-        // Show toast with longer delay for health checks
+        // Show toast with longer delay for health checks and debug info
         const bsToast = new bootstrap.Toast(toast, {
-            delay: type === 'warning' || type === 'error' ? 8000 : 4000
+            delay: type === 'warning' || type === 'error' || type === 'info' ? 12000 : 4000
         });
         bsToast.show();
     }

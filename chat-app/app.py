@@ -10,6 +10,8 @@ from ldclient.config import Config
 from ldai.client import LDAIClient, AIConfig, ModelConfig, ProviderConfig, LDMessage
 from ldobserve import ObservabilityConfig, ObservabilityPlugin, observe
 from dotenv import load_dotenv
+import platform
+import json
 
 # Load environment variables
 load_dotenv()
@@ -65,7 +67,7 @@ def initialize_launchdarkly():
                 ObservabilityPlugin(
                     ObservabilityConfig(
                         service_name="chat-ai-app",
-                        service_version="1.0.1"
+                        service_version="1.1.0"
                     )
                 )
             ]
@@ -84,18 +86,49 @@ def initialize_launchdarkly():
         return False
 
 def get_user_context():
-    """Create a user context for LaunchDarkly evaluation"""
-    # Use session ID as user key for consistency
-    if 'user_id' not in session:
-        session['user_id'] = str(uuid.uuid4())
+    """Create a user context for LaunchDarkly evaluation with user ID and browser details"""
+    # Check if user is authenticated
+    if 'authenticated' not in session or not session['authenticated']:
+        return None
     
-    return (
+    user_id = session.get('user_id')
+    browser_details = session.get('browser_details', {})
+    
+    # Create context builder with user ID
+    context_builder = (
         Context
-        .builder(session['user_id'])
+        .builder(user_id)
         .kind('user')
-        .name(f"chat-user-{session['user_id'][:8]}")
-        .build()
+        .name(f"chat-user-{user_id}")
     )
+    
+    # Add browser details as custom attributes
+    if browser_details:
+        # Add browser information
+        if 'userAgent' in browser_details:
+            context_builder.set('userAgent', browser_details['userAgent'])
+        if 'platform' in browser_details:
+            context_builder.set('platform', browser_details['platform'])
+        if 'language' in browser_details:
+            context_builder.set('language', browser_details['language'])
+        if 'screenResolution' in browser_details:
+            context_builder.set('screenResolution', browser_details['screenResolution'])
+        if 'timezone' in browser_details:
+            context_builder.set('timezone', browser_details['timezone'])
+        if 'viewport' in browser_details:
+            context_builder.set('viewport', browser_details['viewport'])
+        if 'deviceType' in browser_details:
+            context_builder.set('deviceType', browser_details['deviceType'])
+        if 'browserName' in browser_details:
+            context_builder.set('browserName', browser_details['browserName'])
+        if 'browserVersion' in browser_details:
+            context_builder.set('browserVersion', browser_details['browserVersion'])
+    
+    # Add session metadata
+    context_builder.set('sessionStart', session.get('session_start', datetime.now().isoformat()))
+    context_builder.set('serverPlatform', platform.system())
+    
+    return context_builder.build()
 
 def get_ai_config(user_message):
     """Get AI configuration from LaunchDarkly"""
@@ -140,17 +173,94 @@ def get_ai_config(user_message):
 
 @app.route('/')
 def index():
-    """Render the main chat interface"""
+    """Render the main chat interface or login page"""
+    # Check if user is authenticated
+    if 'authenticated' not in session or not session['authenticated']:
+        return render_template('login.html')
+    
     # Initialize session chat history if not exists
     if 'chat_history' not in session:
         session['chat_history'] = []
     
-    return render_template('index.html')
+    return render_template('index.html', user_id=session.get('user_id', 'Unknown'))
+
+@app.route('/api/login', methods=['POST'])
+def login():
+    """Handle user login with user ID and browser details"""
+    try:
+        data = request.get_json()
+        user_id = data.get('userId', '').strip()
+        browser_details = data.get('browserDetails', {})
+        
+        if not user_id:
+            return jsonify({'error': 'User ID is required'}), 400
+        
+        # Validate user ID format (alphanumeric, dashes, underscores allowed)
+        import re
+        if not re.match(r'^[a-zA-Z0-9_-]+$', user_id):
+            return jsonify({'error': 'User ID can only contain letters, numbers, dashes, and underscores'}), 400
+        
+        if len(user_id) < 2 or len(user_id) > 50:
+            return jsonify({'error': 'User ID must be between 2 and 50 characters'}), 400
+        
+        # Set session data
+        session['authenticated'] = True
+        session['user_id'] = user_id
+        session['browser_details'] = browser_details
+        session['session_start'] = datetime.now().isoformat()
+        session['chat_history'] = []  # Reset chat history for new user
+        
+        # Log successful login
+        observe.record_log(
+            f"User logged in: {user_id}", 
+            logging.INFO, 
+            {
+                "user_id": user_id,
+                "browser": browser_details.get('browserName', 'Unknown'),
+                "platform": browser_details.get('platform', 'Unknown')
+            }
+        )
+        
+        return jsonify({
+            'status': 'success',
+            'message': 'Login successful',
+            'userId': user_id
+        })
+        
+    except Exception as e:
+        observe.record_log(f"Login error: {e}", logging.ERROR)
+        return jsonify({'error': 'Login failed. Please try again.'}), 500
+
+@app.route('/api/logout', methods=['POST'])
+def logout():
+    """Handle user logout"""
+    try:
+        user_id = session.get('user_id', 'Unknown')
+        
+        # Log logout
+        observe.record_log(
+            f"User logged out: {user_id}", 
+            logging.INFO, 
+            {"user_id": user_id}
+        )
+        
+        # Clear session
+        session.clear()
+        
+        return jsonify({'status': 'success', 'message': 'Logout successful'})
+        
+    except Exception as e:
+        observe.record_log(f"Logout error: {e}", logging.ERROR)
+        return jsonify({'error': 'Logout failed'}), 500
 
 @app.route('/api/chat', methods=['POST'])
 def chat():
     """Handle chat messages"""
     try:
+        # Check authentication
+        if 'authenticated' not in session or not session['authenticated']:
+            return jsonify({'error': 'Authentication required. Please login first.'}), 401
+        
         data = request.get_json()
         user_message = data.get('message', '').strip()
         
@@ -161,11 +271,16 @@ def chat():
         session_trace_id = session.get('trace_id', str(uuid.uuid4()))
         session['trace_id'] = session_trace_id
         
-        # Log user input
+        # Log user input with enhanced context
         observe.record_log(
             f"User message received: {user_message}", 
             logging.INFO, 
-            {"customID": session_trace_id}
+            {
+                "customID": session_trace_id,
+                "user_id": session.get('user_id'),
+                "browser": session.get('browser_details', {}).get('browserName', 'Unknown'),
+                "platform": session.get('browser_details', {}).get('platform', 'Unknown')
+            }
         )
         
         # Get AI configuration from LaunchDarkly
@@ -175,7 +290,7 @@ def chat():
             observe.record_log(
                 "AI Config is disabled", 
                 logging.INFO, 
-                {"customID": session_trace_id}
+                {"customID": session_trace_id, "user_id": session.get('user_id')}
             )
             return jsonify({'response': 'AI chat is currently disabled. Please try again later.'})
         
@@ -202,9 +317,22 @@ def chat():
             if msg.role == 'system':
                 system_messages.append({'text': msg.content})
         
-        # Add enhanced system message for better formatting
-        enhanced_system_prompt = """You are a helpful and professional AI assistant. When responding:
+        # Add enhanced system message with user context
+        user_id = session.get('user_id', 'Unknown')
+        browser_details = session.get('browser_details', {})
+        
+        context_prompt = f"""You are a helpful and professional AI assistant. 
 
+USER CONTEXT:
+- User ID: {user_id}
+- Browser: {browser_details.get('browserName', 'Unknown')} {browser_details.get('browserVersion', '')}
+- Platform: {browser_details.get('platform', 'Unknown')}
+- Screen: {browser_details.get('screenResolution', 'Unknown')}
+- Language: {browser_details.get('language', 'Unknown')}
+- Timezone: {browser_details.get('timezone', 'Unknown')}
+- Device Type: {browser_details.get('deviceType', 'Unknown')}
+
+RESPONSE GUIDELINES:
 1. Use clear, well-structured formatting with proper paragraphs
 2. Use markdown-style formatting when appropriate:
    - **Bold** for emphasis
@@ -217,11 +345,14 @@ def chat():
 4. Use headers (## Header) to organize complex topics
 5. Be conversational but professional
 6. Provide examples when explaining concepts
-7. End responses with a brief summary or next steps when relevant
+7. Consider the user's platform and browser when giving technical advice
+8. If providing time-sensitive information, consider their timezone
+9. Tailor interface recommendations based on their screen resolution and device type
+10. End responses with a brief summary or next steps when relevant
 
 Always prioritize clarity and readability in your responses."""
         
-        system_messages.append({'text': enhanced_system_prompt})
+        system_messages.append({'text': context_prompt})
         
         # Call Bedrock API
         try:
@@ -264,6 +395,7 @@ Always prioritize clarity and readability in your responses."""
                 logging.INFO, 
                 {
                     "customID": session_trace_id,
+                    "user_id": session.get('user_id'),
                     "model": config_value.model.name,
                     "response_length": len(ai_response)
                 }
@@ -278,7 +410,7 @@ Always prioritize clarity and readability in your responses."""
             observe.record_log(
                 f"Bedrock API error: {e}", 
                 logging.ERROR, 
-                {"customID": session_trace_id}
+                {"customID": session_trace_id, "user_id": session.get('user_id')}
             )
             
             return jsonify({'error': 'Failed to generate response. Please try again.'}), 500
@@ -290,6 +422,10 @@ Always prioritize clarity and readability in your responses."""
 @app.route('/api/clear', methods=['POST'])
 def clear_chat():
     """Clear chat history"""
+    # Check authentication
+    if 'authenticated' not in session or not session['authenticated']:
+        return jsonify({'error': 'Authentication required'}), 401
+        
     session['chat_history'] = []
     return jsonify({'status': 'success'})
 
@@ -307,7 +443,14 @@ def health_check():
 def debug_config():
     """Debug endpoint to check LaunchDarkly config"""
     try:
+        # Check authentication
+        if 'authenticated' not in session or not session['authenticated']:
+            return jsonify({'error': 'Authentication required'}), 401
+            
         context = get_user_context()
+        
+        if not context:
+            return jsonify({'error': 'Invalid user context'}), 400
         
         # Try to get the AI config
         default_config = AIConfig(
@@ -327,18 +470,34 @@ def debug_config():
             {}
         )
         
+        # Extract context attributes safely
+        context_attributes = {}
+        browser_details = session.get('browser_details', {})
+        
+        # Since we know how we built the context, let's recreate the attributes view
+        # by getting them from the session data that was used to build the context
+        context_attributes.update(browser_details)
+        context_attributes['sessionStart'] = session.get('session_start', 'Unknown')
+        context_attributes['serverPlatform'] = platform.system()
+        
         return jsonify({
             'ai_config_key': AI_CONFIG_KEY,
             'user_context': {
                 'key': context.key,
                 'name': context.name,
-                'kind': context.kind
+                'kind': context.kind,
+                'attributes': context_attributes
             },
             'config_enabled': config_value.enabled,
             'config_model': config_value.model.name if config_value.model else None,
             'config_provider': config_value.provider.name if config_value.provider else None,
             'using_fallback': config_value == default_config,
             'sdk_initialized': ldclient.get().is_initialized(),
+            'session_info': {
+                'user_id': session.get('user_id'),
+                'browser_details': session.get('browser_details', {}),
+                'session_start': session.get('session_start')
+            },
             'environment_vars': {
                 'LAUNCHDARKLY_SDK_KEY': LAUNCHDARKLY_SDK_KEY[:10] + '...' if LAUNCHDARKLY_SDK_KEY else None,
                 'LAUNCHDARKLY_AI_CONFIG_KEY': AI_CONFIG_KEY

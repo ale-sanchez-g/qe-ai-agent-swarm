@@ -12,60 +12,191 @@
 - **Last Updated**: 2025-08-22
 
 ## Application Overview
-The AI Chat Assistant is a Flask-based web application that provides an interactive chat interface powered by AWS Bedrock AI models with LaunchDarkly feature flags for configuration management. The application features a modern, professional UI with real-time messaging, conversation history, and observability features.
+The AI Chat Assistant is a Flask-based web application that provides an interactive chat interface powered by AWS Bedrock AI models with LaunchDarkly feature flags for configuration management. The application features a modern, professional UI with real-time messaging, conversation history, user authentication, browser context collection, and enhanced observability features. Users must log in with a custom User ID to access the chat functionality, and the system collects browser details for personalized AI responses.
 
 ## Application URL
 http://localhost:5001
 
 ## Test Suite Summary
 
-- **API Endpoint Testing** (8 test cases)
-- **UI Component Testing** (12 test cases)
+- **Authentication Testing** (6 test cases)
+- **API Endpoint Testing** (10 test cases)
+- **UI Component Testing** (15 test cases)
 - **Integration Testing** (8 test cases)
 - **Performance Testing** (4 test cases)
-- **Security Testing** (6 test cases)
-- **Error Handling and Edge Cases** (6 test cases)
+- **Security Testing** (8 test cases)
+- **Error Handling and Edge Cases** (8 test cases)
 - **Accessibility Testing** (3 test cases)
 - **Cross-Browser Compatibility** (4 test cases)
 
 ### Key Features
+- User authentication system with custom User ID input
+- Browser context collection for personalized AI responses  
 - Interactive chat interface with professional UI design
 - AWS Bedrock integration for AI responses
-- LaunchDarkly AI configuration management
-- Session-based conversation history
+- LaunchDarkly AI configuration management with enhanced user context
+- Session-based conversation history with user-specific isolation
 - Real-time status indicators and health checks
 - Responsive design with mobile support
 - Enhanced message formatting (markdown, code blocks, lists)
-- System observability and logging
+- System observability and logging with user tracking
+- Logout functionality with session management
+- Debug configuration endpoint for troubleshooting
 
 ---
 
 ## Test Categories
 
-### 1. API Endpoint Testing
+### 1. Authentication Testing
 
-#### 1.1 Core Application Endpoints
+#### 1.1 Login Functionality
 
-##### Test Case 1.1.1: Main Chat Interface
+##### Test Case 1.1.1: Valid User Login
 - **Test ID**: TC_001
 - **Test Type**: Functional
 - **Priority**: High
-- **Description**: Verify the main chat interface loads correctly
+- **Description**: Verify user can successfully log in with valid User ID
+- **Endpoint**: `POST /api/login`
+- **Test Data**: `{"userId": "testuser123", "browserDetails": {...}}`
+- **Expected Behavior**:
+  - Returns HTTP 200 status
+  - Content-Type: application/json
+  - Sets session authentication
+  - Redirects to main chat interface
+- **Validation Points**:
+  - Response format: `{"status": "success", "message": "Login successful", "userId": "testuser123"}`
+  - Session is established with user context
+  - Browser details are captured and stored
+  - User is redirected to chat interface
+
+##### Test Case 1.1.2: Invalid User ID Format
+- **Test ID**: TC_002
+- **Test Type**: Negative
+- **Priority**: High
+- **Description**: Verify proper validation of User ID format
+- **Endpoint**: `POST /api/login`
+- **Test Data**: `{"userId": "test@user!", "browserDetails": {...}}`
+- **Expected Behavior**:
+  - Returns HTTP 400 status
+  - Content-Type: application/json
+  - Returns validation error message
+- **Validation Points**:
+  - Response format: `{"error": "User ID can only contain letters, numbers, dashes, and underscores"}`
+  - No session is created
+  - User remains on login page
+
+##### Test Case 1.1.3: Empty User ID
+- **Test ID**: TC_003
+- **Test Type**: Negative
+- **Priority**: High
+- **Description**: Verify handling of empty User ID
+- **Endpoint**: `POST /api/login`
+- **Test Data**: `{"userId": "", "browserDetails": {...}}`
+- **Expected Behavior**:
+  - Returns HTTP 400 status
+  - Content-Type: application/json
+  - Returns appropriate error message
+- **Validation Points**:
+  - Response format: `{"error": "User ID is required"}`
+  - No session is created
+  - Error is displayed to user
+
+##### Test Case 1.1.4: User ID Length Validation
+- **Test ID**: TC_004
+- **Test Type**: Negative
+- **Priority**: Medium
+- **Description**: Verify User ID length limits are enforced
+- **Endpoint**: `POST /api/login`
+- **Test Data**: `{"userId": "a", "browserDetails": {...}}` (too short) and `{"userId": "a"*51, "browserDetails": {...}}` (too long)
+- **Expected Behavior**:
+  - Returns HTTP 400 status
+  - Content-Type: application/json
+  - Returns length validation error
+- **Validation Points**:
+  - Response format: `{"error": "User ID must be between 2 and 50 characters"}`
+  - Both minimum and maximum length limits are enforced
+  - Clear error messaging
+
+#### 1.2 Browser Context Collection
+
+##### Test Case 1.2.1: Browser Details Collection
+- **Test ID**: TC_005
+- **Test Type**: Functional
+- **Priority**: High
+- **Description**: Verify browser details are collected and stored during login
+- **Expected Behavior**:
+  - Browser information is captured via JavaScript
+  - Details include browser name, version, platform, screen resolution, timezone
+  - Information is sent with login request
+  - Data is stored in session for context
+- **Validation Points**:
+  - All expected browser properties are collected
+  - Data format is consistent and valid
+  - Information is used for personalized responses
+  - Privacy considerations are respected
+
+##### Test Case 1.2.2: Logout Functionality
+- **Test ID**: TC_006
+- **Test Type**: Functional
+- **Priority**: High
+- **Description**: Verify user can successfully logout
+- **Endpoint**: `POST /api/logout`
+- **Prerequisites**: User must be logged in
+- **Expected Behavior**:
+  - Returns HTTP 200 status
+  - Session is cleared
+  - User is redirected to login page
+  - Chat history is cleared
+- **Validation Points**:
+  - Response format: `{"status": "success", "message": "Logout successful"}`
+  - All session data is cleared
+  - Subsequent requests require re-authentication
+  - User sees login page after logout
+
+### 2. API Endpoint Testing
+
+#### 2.1 Core Application Endpoints
+
+##### Test Case 2.1.1: Main Chat Interface (Authenticated)
+- **Test ID**: TC_007
+- **Test Type**: Functional
+- **Priority**: High
+- **Description**: Verify the main chat interface loads correctly for authenticated users
 - **Endpoint**: `GET /`
+- **Prerequisites**: User must be logged in
 - **Expected Behavior**:
   - Returns HTTP 200 status
   - Content-Type: text/html
-  - Serves index.html template with all required assets
+  - Serves index.html template with user context
   - Interface loads without errors
 - **Test Data**: N/A
 - **Validation Points**:
   - Response contains valid HTML5 structure
+  - User ID is displayed in interface
   - All CSS and JavaScript assets load successfully
   - Chat interface elements are present and functional
   - No browser console errors
 
-##### Test Case 1.1.2: Health Check Endpoint
-- **Test ID**: TC_002
+##### Test Case 2.1.2: Main Interface Redirect (Unauthenticated)
+- **Test ID**: TC_008
+- **Test Type**: Functional
+- **Priority**: High
+- **Description**: Verify unauthenticated users are redirected to login
+- **Endpoint**: `GET /`
+- **Prerequisites**: No active session
+- **Expected Behavior**:
+  - Returns HTTP 200 status
+  - Content-Type: text/html
+  - Serves login.html template
+  - Login form is displayed
+- **Validation Points**:
+  - Login page loads correctly
+  - User ID input field is present
+  - Browser details collection script runs
+  - Submit button is functional
+
+##### Test Case 2.1.3: Health Check Endpoint
+- **Test ID**: TC_009
 - **Test Type**: Functional
 - **Priority**: High
 - **Description**: Verify health check endpoint returns comprehensive system status
@@ -80,32 +211,52 @@ http://localhost:5001
   - All status fields are present and accurate
   - Timestamp is in ISO format
 
-#### 1.2 Chat API Endpoints
+#### 2.2 Chat API Endpoints
 
-##### Test Case 1.2.1: Valid Chat Message
-- **Test ID**: TC_003
+##### Test Case 2.2.1: Valid Chat Message (Authenticated)
+- **Test ID**: TC_010
 - **Test Type**: Functional
 - **Priority**: High
-- **Description**: Verify chat API processes valid messages correctly
+- **Description**: Verify chat API processes valid messages correctly for authenticated users
 - **Endpoint**: `POST /api/chat`
+- **Prerequisites**: User must be logged in
 - **Test Data**: `{"message": "Hello, how can you help me?"}`
 - **Expected Behavior**:
   - Returns HTTP 200 status
   - Content-Type: application/json
-  - Returns AI-generated response
+  - Returns AI-generated response with user context
   - Message is added to session history
 - **Validation Points**:
   - Response format: `{"response": "..."}`
   - Response content is relevant and coherent
+  - Response includes user context awareness
   - Session chat history is updated
   - Response time is reasonable (< 10 seconds)
 
-##### Test Case 1.2.2: Empty Chat Message
-- **Test ID**: TC_004
+##### Test Case 2.2.2: Chat Message (Unauthenticated)
+- **Test ID**: TC_011
+- **Test Type**: Negative
+- **Priority**: High
+- **Description**: Verify chat API rejects unauthenticated requests
+- **Endpoint**: `POST /api/chat`
+- **Prerequisites**: No active session
+- **Test Data**: `{"message": "Hello, how can you help me?"}`
+- **Expected Behavior**:
+  - Returns HTTP 401 status
+  - Content-Type: application/json
+  - Returns authentication error message
+- **Validation Points**:
+  - Response format: `{"error": "Authentication required. Please login first."}`
+  - No processing occurs
+  - No session history is created
+
+##### Test Case 2.2.3: Empty Chat Message
+- **Test ID**: TC_012
 - **Test Type**: Negative
 - **Priority**: Medium
 - **Description**: Verify proper error handling for empty messages
 - **Endpoint**: `POST /api/chat`
+- **Prerequisites**: User must be logged in
 - **Test Data**: `{"message": ""}`
 - **Expected Behavior**:
   - Returns HTTP 400 status
@@ -116,12 +267,13 @@ http://localhost:5001
   - No session history is created
   - Error is logged appropriately
 
-##### Test Case 1.2.3: Malformed Chat Request
-- **Test ID**: TC_005
+##### Test Case 2.2.4: Malformed Chat Request
+- **Test ID**: TC_013
 - **Test Type**: Negative
 - **Priority**: Medium
 - **Description**: Verify error handling for malformed JSON requests
 - **Endpoint**: `POST /api/chat`
+- **Prerequisites**: User must be logged in
 - **Test Data**: Invalid JSON payload
 - **Expected Behavior**:
   - Returns HTTP 400 status
@@ -132,12 +284,13 @@ http://localhost:5001
   - Application remains stable
   - Error is logged for debugging
 
-##### Test Case 1.2.4: Long Message Processing
-- **Test ID**: TC_006
+##### Test Case 2.2.5: Long Message Processing
+- **Test ID**: TC_014
 - **Test Type**: Functional
 - **Priority**: Medium
 - **Description**: Verify handling of very long input messages
 - **Endpoint**: `POST /api/chat`
+- **Prerequisites**: User must be logged in
 - **Test Data**: `{"message": "A very long message with 2000+ characters..."}`
 - **Expected Behavior**:
   - Message is processed successfully or rejected gracefully
@@ -148,15 +301,15 @@ http://localhost:5001
   - Memory usage is stable
   - Either success response or appropriate length limit error
 
-#### 1.3 Session Management Endpoints
+#### 2.3 Session Management Endpoints
 
-##### Test Case 1.3.1: Clear Chat History
-- **Test ID**: TC_007
+##### Test Case 2.3.1: Clear Chat History (Authenticated)
+- **Test ID**: TC_015
 - **Test Type**: Functional
 - **Priority**: High
-- **Description**: Verify chat history clearing functionality
+- **Description**: Verify chat history clearing functionality for authenticated users
 - **Endpoint**: `POST /api/clear`
-- **Prerequisites**: Existing chat history in session
+- **Prerequisites**: User logged in with existing chat history
 - **Expected Behavior**:
   - Returns HTTP 200 status
   - Content-Type: application/json
@@ -166,361 +319,514 @@ http://localhost:5001
   - Session chat history is empty after request
   - Subsequent chat requests start fresh conversation
 
-##### Test Case 1.3.2: Debug Configuration Endpoint
-- **Test ID**: TC_008
+##### Test Case 2.3.2: Clear Chat History (Unauthenticated)
+- **Test ID**: TC_016
+- **Test Type**: Negative
+- **Priority**: Medium
+- **Description**: Verify clear chat requires authentication
+- **Endpoint**: `POST /api/clear`
+- **Prerequisites**: No active session
+- **Expected Behavior**:
+  - Returns HTTP 401 status
+  - Content-Type: application/json
+  - Returns authentication error message
+- **Validation Points**:
+  - Response format: `{"error": "Authentication required"}`
+  - No processing occurs
+
+##### Test Case 2.3.3: Debug Configuration Endpoint (Authenticated)
+- **Test ID**: TC_017
 - **Test Type**: Functional
 - **Priority**: Medium
-- **Description**: Verify debug endpoint provides configuration information
+- **Description**: Verify debug endpoint provides configuration information for authenticated users
 - **Endpoint**: `GET /api/debug`
+- **Prerequisites**: User must be logged in
 - **Expected Behavior**:
   - Returns HTTP 200 status
   - Content-Type: application/json
-  - Returns comprehensive configuration debug info
+  - Returns comprehensive configuration debug info including user context
 - **Validation Points**:
   - Contains LaunchDarkly configuration details
-  - Shows user context information
+  - Shows user context information with browser details
+  - Includes session information
   - Includes environment variable status
   - Sensitive information is masked appropriately
 
-### 2. UI Component Testing
-
-#### 2.1 Chat Interface Components
-
-##### Test Case 2.1.1: Chat Header Display
-- **Test ID**: TC_009
-- **Test Type**: UI
-- **Priority**: High
-- **Description**: Verify chat header displays correctly with all elements
-- **Expected Behavior**:
-  - Header contains application title and subtitle
-  - Status indicator is visible and functional
-  - Clear chat button is present and clickable
-  - Settings dropdown is accessible
-- **Validation Points**:
-  - All header elements are properly aligned
-  - Status indicator shows appropriate color coding
-  - Buttons respond to hover states
-  - Dropdown menu opens and displays options
-
-##### Test Case 2.1.2: Message Display Area
-- **Test ID**: TC_010
-- **Test Type**: UI
-- **Priority**: High
-- **Description**: Verify message display area functions correctly
-- **Expected Behavior**:
-  - Welcome message is displayed on page load
-  - Messages are properly formatted and aligned
-  - User and assistant messages are visually distinct
-  - Scrolling works when content exceeds container height
-- **Validation Points**:
-  - Message bubbles have appropriate styling
-  - Timestamps are displayed correctly
-  - Avatar icons are present for each message type
-  - Auto-scroll to bottom on new messages
-
-##### Test Case 2.1.3: Input Area Functionality
-- **Test ID**: TC_011
-- **Test Type**: UI
-- **Priority**: High
-- **Description**: Verify message input area works as expected
-- **Expected Behavior**:
-  - Textarea expands with content (up to max height)
-  - Send button is enabled/disabled appropriately
-  - Keyboard shortcuts work (Enter to send, Shift+Enter for new line)
-  - Character count/limit indicators if present
-- **Validation Points**:
-  - Input field is properly styled and responsive
-  - Placeholder text is informative
-  - Send button icon and states are correct
-  - Input validation provides immediate feedback
-
-#### 2.2 Interactive Features
-
-##### Test Case 2.2.1: Real-time Status Indicator
-- **Test ID**: TC_012
-- **Test Type**: UI
-- **Priority**: Medium
-- **Description**: Verify status indicator reflects system health accurately
-- **Expected Behavior**:
-  - Status dot changes color based on system health
-  - Tooltip or status information is available
-  - Updates reflect actual backend status
-- **Validation Points**:
-  - Green indicates healthy status
-  - Yellow/orange indicates warnings
-  - Red indicates errors or disconnection
-  - Animation provides visual feedback
-
-##### Test Case 2.2.2: Typing Indicator
-- **Test ID**: TC_013
-- **Test Type**: UI
-- **Priority**: Medium
-- **Description**: Verify typing indicator appears during AI response generation
-- **Expected Behavior**:
-  - Typing indicator appears when message is sent
-  - Animation indicates AI is processing
-  - Indicator disappears when response is received
-  - Send button shows loading state
-- **Validation Points**:
-  - Smooth animation transitions
-  - Proper timing and synchronization
-  - Loading states are clear to user
-  - UI remains responsive during processing
-
-##### Test Case 2.2.3: Clear Chat Functionality
-- **Test ID**: TC_014
-- **Test Type**: UI
-- **Priority**: High
-- **Description**: Verify clear chat button works correctly
-- **Expected Behavior**:
-  - Confirmation dialog appears before clearing
-  - Chat history is visually cleared after confirmation
-  - Welcome message reappears
-  - Success notification is displayed
-- **Validation Points**:
-  - Confirmation dialog is user-friendly
-  - Clear action is irreversible and properly communicated
-  - UI state resets to initial condition
-  - Feedback confirms action completion
-
-##### Test Case 2.2.4: Settings Dropdown Menu
-- **Test ID**: TC_015
-- **Test Type**: UI
-- **Priority**: Medium
-- **Description**: Verify settings dropdown provides access to system information
-- **Expected Behavior**:
-  - Dropdown opens on click
-  - Shows integration status information
-  - Health check option is functional
-  - Menu closes properly after selection
-- **Validation Points**:
-  - Menu items are clearly labeled
-  - Integration status is accurate
-  - Health check provides detailed feedback
-  - Menu positioning and styling are correct
-
-#### 2.3 Message Formatting
-
-##### Test Case 2.3.1: Text Formatting Support
-- **Test ID**: TC_016
-- **Test Type**: UI
-- **Priority**: Medium
-- **Description**: Verify support for rich text formatting in messages
-- **Test Data**: Messages with **bold**, *italic*, `code`, and other formatting
-- **Expected Behavior**:
-  - Bold and italic text render correctly
-  - Inline code has distinct styling
-  - Links are clickable and styled appropriately
-  - Lists are properly formatted
-- **Validation Points**:
-  - Formatting is consistent between user and AI messages
-  - Code blocks have syntax highlighting if applicable
-  - List indentation and bullets are correct
-  - Text remains readable and accessible
-
-##### Test Case 2.3.2: Code Block Display
-- **Test ID**: TC_017
-- **Test Type**: UI
-- **Priority**: Medium
-- **Description**: Verify code blocks are displayed with proper formatting
-- **Test Data**: Messages containing ```code blocks```
-- **Expected Behavior**:
-  - Code blocks have distinct background and font
-  - Proper spacing and indentation maintained
-  - Scroll bars appear for long code
-  - Copy functionality if implemented
-- **Validation Points**:
-  - Monospace font is used for code
-  - Background color distinguishes code from text
-  - Horizontal scrolling works for wide code
-  - Code formatting preserves original structure
-
-#### 2.4 Responsive Design
-
-##### Test Case 2.4.1: Mobile Device Display
+##### Test Case 2.3.4: Debug Configuration Endpoint (Unauthenticated)
 - **Test ID**: TC_018
-- **Test Type**: UI
-- **Priority**: High
-- **Description**: Verify application displays correctly on mobile devices
-- **Test Data**: Various mobile screen sizes (320px to 768px width)
+- **Test Type**: Negative
+- **Priority**: Medium
+- **Description**: Verify debug endpoint requires authentication
+- **Endpoint**: `GET /api/debug`
+- **Prerequisites**: No active session
 - **Expected Behavior**:
-  - Layout adapts to small screens
-  - All functionality remains accessible
-  - Text is readable without horizontal scrolling
-  - Touch interactions work properly
+  - Returns HTTP 401 status
+  - Content-Type: application/json
+  - Returns authentication error message
 - **Validation Points**:
-  - Header adjusts appropriately for mobile
-  - Message bubbles scale correctly
-  - Input area remains usable
-  - Navigation elements are touch-friendly
+  - Response format: `{"error": "Authentication required"}`
+  - No configuration information is revealed
 
-##### Test Case 2.4.2: Tablet Display
+### 3. UI Component Testing
+
+#### 3.1 Login Interface Components
+
+##### Test Case 3.1.1: Login Page Display
 - **Test ID**: TC_019
 - **Test Type**: UI
-- **Priority**: Medium
-- **Description**: Verify application works well on tablet devices
-- **Test Data**: Tablet screen sizes (768px to 1024px width)
+- **Priority**: High
+- **Description**: Verify login page displays correctly with all required elements
 - **Expected Behavior**:
-  - Layout utilizes available space effectively
-  - All features work with touch input
-  - Text sizing is appropriate for tablet viewing
+  - Login form is prominently displayed
+  - User ID input field is present and functional
+  - Browser details collection is working
+  - Submit button is styled and responsive
+  - Visual feedback for loading states
 - **Validation Points**:
-  - No unused white space issues
-  - Interactive elements are appropriately sized
-  - Portrait and landscape orientations work
-  - Performance is smooth on tablet devices
+  - Form validation provides immediate feedback
+  - Input field has appropriate labels and placeholders
+  - Submit button shows loading state during login
+  - Browser information is displayed to user
+  - Responsive design works on all screen sizes
 
-##### Test Case 2.4.3: Desktop Browser Scaling
+##### Test Case 3.1.2: Login Form Validation
 - **Test ID**: TC_020
 - **Test Type**: UI
-- **Priority**: Medium
-- **Description**: Verify application scales well on large desktop screens
-- **Test Data**: Desktop screens from 1024px to 2560px+ width
+- **Priority**: High
+- **Description**: Verify client-side form validation works correctly
+- **Test Data**: Various invalid User ID formats
 - **Expected Behavior**:
-  - Layout doesn't become too wide or sparse
-  - Content remains centered and readable
-  - All interactive elements scale appropriately
+  - Real-time validation provides immediate feedback
+  - Error messages are clear and actionable
+  - Form prevents submission of invalid data
+  - Valid input enables submit button
 - **Validation Points**:
-  - Maximum width constraints are respected
-  - Content centering works correctly
-  - High DPI displays render clearly
-  - UI elements maintain proper proportions
+  - Character restrictions are enforced
+  - Length limits are validated
+  - Error messages appear near input field
+  - Success states are visually indicated
 
-### 3. Integration Testing
-
-#### 3.1 AWS Bedrock Integration
-
-##### Test Case 3.1.1: Bedrock Client Initialization
+##### Test Case 3.1.3: Browser Context Display
 - **Test ID**: TC_021
+- **Test Type**: UI
+- **Priority**: Medium
+- **Description**: Verify browser context information is displayed to user
+- **Expected Behavior**:
+  - Browser details are collected automatically
+  - Information is displayed in user-friendly format
+  - Details include browser, platform, device type, resolution
+  - Data collection is transparent to user
+- **Validation Points**:
+  - All browser properties are accurately detected
+  - Information is formatted for readability
+  - Privacy implications are communicated
+  - No sensitive data is exposed
+
+#### 3.2 Chat Interface Components
+
+##### Test Case 3.2.1: Chat Header Display (Authenticated)
+- **Test ID**: TC_022
+- **Test Type**: UI
+- **Priority**: High
+- **Description**: Verify chat header displays correctly with user context
+- **Prerequisites**: User must be logged in
+- **Expected Behavior**:
+  - Header contains application title and subtitle
+  - User ID is displayed in header
+  - Status indicator is visible and functional
+  - Settings dropdown includes logout option
+- **Validation Points**:
+  - User ID is prominently displayed
+  - All header elements are properly aligned
+  - Status indicator shows appropriate color coding
+  - Logout button is easily accessible
+  - Settings dropdown includes new debug option
+
+##### Test Case 3.2.2: Message Display Area (User Context)
+- **Test ID**: TC_023
+- **Test Type**: UI
+- **Priority**: High
+- **Description**: Verify message display area shows personalized welcome
+- **Prerequisites**: User must be logged in
+- **Expected Behavior**:
+  - Welcome message includes user's name
+  - Messages are properly formatted and aligned
+  - User and assistant messages are visually distinct
+  - Context-aware responses are displayed properly
+- **Validation Points**:
+  - Personalized welcome message appears
+  - Message bubbles have appropriate styling
+  - Timestamps are displayed correctly
+  - User context is reflected in AI responses
+  - Auto-scroll to bottom on new messages
+
+##### Test Case 3.2.3: Enhanced Settings Dropdown
+- **Test ID**: TC_024
+- **Test Type**: UI
+- **Priority**: Medium
+- **Description**: Verify settings dropdown includes new functionality
+- **Prerequisites**: User must be logged in
+- **Expected Behavior**:
+  - Dropdown includes debug configuration option
+  - Logout button is present and functional
+  - Health check provides enhanced information
+  - Menu organization is logical
+- **Validation Points**:
+  - Debug option provides detailed configuration info
+  - Logout confirmation dialog appears
+  - Health check shows user context information
+  - Menu closes properly after selection
+
+##### Test Case 3.2.4: Enhanced Typing Indicator
+- **Test ID**: TC_025
+- **Test Type**: UI
+- **Priority**: Medium
+- **Description**: Verify typing indicator works with authentication context
+- **Prerequisites**: User must be logged in
+- **Expected Behavior**:
+  - Typing indicator appears when message is sent
+  - Animation indicates AI is processing with user context
+  - Indicator disappears when response is received
+  - Loading states show user information
+- **Validation Points**:
+  - Context-aware processing indicators
+  - Smooth animation transitions
+  - Proper timing and synchronization
+  - UI remains responsive during processing
+
+#### 3.3 Authentication Flow UI
+
+##### Test Case 3.3.1: Login to Chat Transition
+- **Test ID**: TC_026
+- **Test Type**: UI
+- **Priority**: High
+- **Description**: Verify smooth transition from login to chat interface
+- **Expected Behavior**:
+  - Successful login redirects to chat interface
+  - User context is maintained during transition
+  - Chat interface loads with personalized content
+  - No data loss or session issues
+- **Validation Points**:
+  - Redirect occurs within reasonable time
+  - User ID is displayed correctly in chat
+  - Welcome message is personalized
+  - Browser context is preserved
+
+##### Test Case 3.3.2: Logout Flow
+- **Test ID**: TC_027
+- **Test Type**: UI
+- **Priority**: High
+- **Description**: Verify logout process and interface cleanup
+- **Prerequisites**: User must be logged in with chat history
+- **Expected Behavior**:
+  - Logout confirmation dialog appears
+  - Session is cleaned up properly
+  - User is redirected to login page
+  - Chat history is cleared
+- **Validation Points**:
+  - Confirmation dialog prevents accidental logout
+  - All user data is cleared from interface
+  - Login page loads correctly after logout
+  - No residual user information is visible
+
+##### Test Case 3.3.3: Session Expiration Handling
+- **Test ID**: TC_028
+- **Test Type**: UI
+- **Priority**: Medium
+- **Description**: Verify UI handles session expiration gracefully
+- **Test Scenario**: Simulate session timeout during chat usage
+- **Expected Behavior**:
+  - User receives clear notification of session expiration
+  - Automatic redirect to login page occurs
+  - Current conversation context is lost (expected behavior)
+  - Login page explains session timeout
+- **Validation Points**:
+  - Session expiration notification is user-friendly
+  - Redirect happens within reasonable time
+  - No error messages are confusing
+  - User can immediately log back in
+
+#### 3.4 Enhanced User Context Features
+
+##### Test Case 3.4.1: Context-Aware AI Responses
+- **Test ID**: TC_029
+- **Test Type**: UI
+- **Priority**: Medium
+- **Description**: Verify AI responses reflect user's browser context
+- **Prerequisites**: User logged in with specific browser/platform
+- **Test Data**: Questions about platform-specific functionality
+- **Expected Behavior**:
+  - AI responses mention user's platform when relevant
+  - Browser-specific advice is provided
+  - User context enhances response quality
+  - Personalization is evident but not intrusive
+- **Validation Points**:
+  - Responses reference user's platform appropriately
+  - Technical advice matches user's environment
+  - Context usage feels natural and helpful
+  - Privacy is respected in context usage
+
+##### Test Case 3.4.2: Debug Information Display
+- **Test ID**: TC_030
+- **Test Type**: UI
+- **Priority**: Low
+- **Description**: Verify debug information includes user context details
+- **Prerequisites**: User must be logged in
+- **Expected Behavior**:
+  - Debug toast shows comprehensive user context
+  - Browser details are accurately displayed
+  - Session information is included
+  - LaunchDarkly user context is shown
+- **Validation Points**:
+  - All user context properties are displayed
+  - Information is formatted for readability
+  - Sensitive data is appropriately masked
+  - Debug info aids troubleshooting
+
+#### 3.5 Enhanced Message Formatting
+
+##### Test Case 3.5.1: Context-Enhanced Text Formatting
+- **Test ID**: TC_031
+- **Test Type**: UI
+- **Priority**: Medium
+- **Description**: Verify rich text formatting works with user context
+- **Prerequisites**: User logged in with specific platform/browser
+- **Test Data**: Messages with **bold**, *italic*, `code`, and platform-specific content
+- **Expected Behavior**:
+  - Bold and italic text render correctly across browsers
+  - Inline code has distinct styling optimized for user's platform
+  - Links are clickable and styled appropriately
+  - Platform-specific code examples are properly formatted
+- **Validation Points**:
+  - Formatting is consistent across different browsers
+  - Code blocks work well on user's specific platform
+  - List indentation and bullets are correct
+  - Text remains readable on user's screen resolution
+
+##### Test Case 3.5.2: Enhanced Code Block Display
+- **Test ID**: TC_032
+- **Test Type**: UI
+- **Priority**: Medium
+- **Description**: Verify code blocks display optimally for user's environment
+- **Prerequisites**: User logged in with known browser/platform
+- **Test Data**: Messages containing ```code blocks``` for user's platform
+- **Expected Behavior**:
+  - Code blocks adapt to user's browser capabilities
+  - Platform-specific syntax highlighting when relevant
+  - Proper spacing optimized for user's screen size
+  - Copy functionality works with user's browser
+- **Validation Points**:
+  - Monospace font renders correctly on user's platform
+  - Background color has appropriate contrast
+  - Horizontal scrolling works on user's device type
+  - Code formatting preserves structure across browsers
+
+#### 3.6 Responsive Design with User Context
+
+##### Test Case 3.6.1: Mobile Device Display with User Context
+- **Test ID**: TC_033
+- **Test Type**: UI
+- **Priority**: High
+- **Description**: Verify application adapts to user's mobile device automatically
+- **Prerequisites**: User logged in from mobile device
+- **Test Data**: Various mobile screen sizes detected from user context
+- **Expected Behavior**:
+  - Layout adapts to user's specific screen size
+  - All functionality remains accessible on user's device
+  - Touch interactions optimized for user's device type
+  - Text sizing appropriate for user's screen DPI
+- **Validation Points**:
+  - Header adjusts for user's mobile browser
+  - Message bubbles scale to user's screen width
+  - Input area optimized for user's device
+  - Navigation elements sized for user's touch targets
+
+##### Test Case 3.6.2: Tablet Display Optimization
+- **Test ID**: TC_034
+- **Test Type**: UI
+- **Priority**: Medium
+- **Description**: Verify application optimizes for user's tablet device
+- **Prerequisites**: User logged in from tablet device
+- **Test Data**: Tablet screen sizes from user context
+- **Expected Behavior**:
+  - Layout utilizes user's screen space effectively
+  - Interface adapts to user's orientation preferences
+  - Touch input optimized for user's device capabilities
+- **Validation Points**:
+  - No unused space on user's specific tablet
+  - Interactive elements sized for user's device
+  - Both orientations work on user's tablet
+  - Performance optimized for user's device specs
+
+##### Test Case 3.6.3: Desktop Browser Scaling with Context
+- **Test ID**: TC_035
+- **Test Type**: UI
+- **Priority**: Medium
+- **Description**: Verify application scales appropriately for user's desktop setup
+- **Prerequisites**: User logged in from desktop browser
+- **Test Data**: Desktop screen resolution from user context
+- **Expected Behavior**:
+  - Layout optimized for user's screen resolution
+  - Content scaling appropriate for user's display DPI
+  - Browser-specific features utilized when available
+- **Validation Points**:
+  - Maximum width appropriate for user's screen
+  - Content centering works on user's resolution
+  - High DPI displays handled correctly
+  - UI proportions optimal for user's setup
+
+### 4. Integration Testing
+
+#### 4.1 Enhanced AWS Bedrock Integration
+
+##### Test Case 4.1.1: Bedrock Client with User Context
+- **Test ID**: TC_036
 - **Test Type**: Integration
 - **Priority**: High
-- **Description**: Verify AWS Bedrock client initializes correctly
-- **Prerequisites**: Valid AWS credentials configured
+- **Description**: Verify AWS Bedrock integration includes user context in requests
+- **Prerequisites**: Valid AWS credentials and authenticated user
 - **Expected Behavior**:
   - Bedrock client connects successfully
-  - Credentials are validated
-  - Account information is retrieved
+  - User context is included in AI model requests
+  - Responses are personalized based on user environment
+  - Account information is retrieved and logged with user ID
 - **Validation Points**:
   - No connection errors in logs
-  - Account ID is displayed in startup logs
-  - Client ready for API calls
+  - User context enhances AI responses
+  - Account ID is logged with user tracking
+  - Client ready for context-aware API calls
 
-##### Test Case 3.1.2: AI Model Response Generation
-- **Test ID**: TC_022
+##### Test Case 4.1.2: Context-Aware AI Model Responses
+- **Test ID**: TC_037
 - **Test Type**: Integration
 - **Priority**: High
-- **Description**: Verify AI model generates appropriate responses
-- **Test Data**: Various types of user queries
+- **Description**: Verify AI model generates context-aware responses
+- **Prerequisites**: Authenticated user with browser context
+- **Test Data**: Platform-specific queries from different user contexts
 - **Expected Behavior**:
-  - Responses are generated within reasonable time
-  - Content is relevant to user queries
-  - Response format is compatible with UI display
+  - Responses include user platform considerations
+  - Technical advice tailored to user's environment
+  - Response format optimized for user's browser
+  - Context usage enhances response relevance
 - **Validation Points**:
-  - Response latency is acceptable (< 30 seconds)
-  - Content quality meets basic coherence standards
-  - No API errors or rate limiting issues
-  - Conversation context is maintained
+  - Response latency remains acceptable
+  - Context integration improves response quality
+  - No API errors with enhanced context
+  - User-specific conversation history maintained
 
-##### Test Case 3.1.3: Bedrock Error Handling
-- **Test ID**: TC_023
+##### Test Case 4.1.3: Enhanced Bedrock Error Handling
+- **Test ID**: TC_038
 - **Test Type**: Integration
 - **Priority**: High
-- **Description**: Verify proper handling of Bedrock API errors
+- **Description**: Verify error handling preserves user context
+- **Prerequisites**: Authenticated user session
 - **Test Scenarios**: 
-  - Network connectivity issues
-  - Invalid credentials
-  - API rate limiting
-  - Service unavailability
+  - Network connectivity issues during chat
+  - Invalid credentials with active user session
+  - API rate limiting with user context
+  - Service unavailability with authenticated users
 - **Expected Behavior**:
-  - Errors are caught and handled gracefully
-  - User receives informative error messages
-  - Application remains stable
-  - Retry mechanisms work when appropriate
+  - Errors are tracked with user context
+  - User receives personalized error messages
+  - Session remains valid during service issues
+  - Context preserved for error recovery
 - **Validation Points**:
-  - Error messages are user-friendly
-  - No application crashes occur
-  - Logs contain detailed error information
-  - Service recovery works when issues resolve
+  - Error messages reference user's environment
+  - User ID is preserved in error logs
+  - Session doesn't break on service errors
+  - Recovery maintains user context
 
-#### 3.2 LaunchDarkly Integration
+#### 4.2 Enhanced LaunchDarkly Integration
 
-##### Test Case 3.2.1: LaunchDarkly Client Initialization
-- **Test ID**: TC_024
+##### Test Case 4.2.1: LaunchDarkly with Enhanced User Context
+- **Test ID**: TC_039
 - **Test Type**: Integration
 - **Priority**: Medium
-- **Description**: Verify LaunchDarkly client initializes with proper configuration
-- **Prerequisites**: Valid LAUNCHDARKLY_SDK_KEY environment variable
+- **Description**: Verify LaunchDarkly evaluates flags with comprehensive user context
+- **Prerequisites**: Valid SDK key and authenticated user with browser details
 - **Expected Behavior**:
-  - Client initializes successfully
-  - AI configuration is retrieved
-  - User context is properly created
+  - Client initializes with enhanced user context
+  - AI configuration considers user environment
+  - Feature flags evaluate based on user attributes
+  - Context includes browser, platform, and session data
 - **Validation Points**:
-  - Client status shows as initialized
-  - AI config contains expected properties
-  - User context has unique session identifier
+  - User context includes all browser attributes
+  - Flag evaluation uses user-specific targeting
+  - AI config adapts to user environment
+  - Context builder includes session metadata
 
-##### Test Case 3.2.2: Feature Flag Configuration
-- **Test ID**: TC_025
+##### Test Case 4.2.2: Dynamic Feature Flag Configuration
+- **Test ID**: TC_040
 - **Test Type**: Integration
 - **Priority**: Medium
-- **Description**: Verify AI configuration is retrieved from LaunchDarkly
+- **Description**: Verify feature flags adapt to different user contexts
+- **Prerequisites**: Multiple user contexts with different attributes
 - **Expected Behavior**:
-  - AI configuration flags are evaluated correctly
-  - Model and provider settings are applied
-  - System messages are configured from flags
+  - Different users receive different configurations
+  - User targeting works based on browser/platform
+  - AI model selection considers user context
+  - Personalization flags function correctly
 - **Validation Points**:
-  - Configuration values match LaunchDarkly dashboard
-  - Changes in LaunchDarkly reflect in application
-  - Fallback configuration works when LD is unavailable
+  - User targeting rules work correctly
+  - Configuration varies appropriately by user
+  - Context-based feature rollouts function
+  - No user data leakage between sessions
 
-##### Test Case 3.2.3: Observability Integration
-- **Test ID**: TC_026
+##### Test Case 4.2.3: Enhanced Observability Integration
+- **Test ID**: TC_041
 - **Test Type**: Integration
 - **Priority**: Medium
-- **Description**: Verify observability plugin tracks application events
+- **Description**: Verify observability tracks user context and interactions
+- **Prerequisites**: Authenticated user with active session
 - **Expected Behavior**:
-  - User interactions are tracked
-  - AI responses are logged with metrics
-  - Error events are captured
+  - User interactions tracked with full context
+  - AI responses logged with user environment data
+  - Error events include user session information
+  - Performance metrics tagged with user attributes
 - **Validation Points**:
-  - Events appear in configured observability platform
-  - Metrics include relevant context and timing
-  - No sensitive data is logged
-  - Performance impact is minimal
+  - Events include user ID and browser context
+  - Metrics show user environment correlation
+  - No PII is logged inappropriately
+  - Performance impact remains minimal
 
-#### 3.3 Session Management Integration
+#### 4.3 Enhanced Session Management Integration
 
-##### Test Case 3.3.1: Flask Session Handling
-- **Test ID**: TC_027
+##### Test Case 4.3.1: Flask Session with User Authentication
+- **Test ID**: TC_042
 - **Test Type**: Integration
 - **Priority**: High
-- **Description**: Verify Flask session management works correctly
+- **Description**: Verify Flask session management with user authentication
+- **Prerequisites**: User login with browser context
 - **Expected Behavior**:
-  - Unique session IDs are generated for each user
-  - Chat history persists within session
-  - Session data is cleaned up appropriately
+  - Unique sessions created per authenticated user
+  - User context persists throughout session
+  - Chat history isolated between users
+  - Session cleanup preserves user data integrity
 - **Validation Points**:
-  - Session IDs are unique and secure
-  - History persists across page refreshes
-  - Memory usage remains stable
-  - Session timeout works correctly
+  - User sessions are properly isolated
+  - Context data persists across requests
+  - Memory usage scales appropriately
+  - Session timeout maintains security
 
-##### Test Case 3.3.2: Conversation Context Management
-- **Test ID**: TC_028
+##### Test Case 4.3.2: Enhanced Conversation Context Management
+- **Test ID**: TC_043
 - **Test Type**: Integration
 - **Priority**: High
-- **Description**: Verify conversation context is maintained correctly
-- **Test Data**: Multi-turn conversation with context references
+- **Description**: Verify conversation context includes user environment
+- **Prerequisites**: Authenticated user with multi-turn conversation
+- **Test Data**: Context-dependent conversations referencing user's platform
 - **Expected Behavior**:
-  - AI responses reference previous conversation
-  - Context is maintained across multiple exchanges
-  - Context limit handling works properly
+  - AI maintains awareness of user's environment
+  - Context includes both conversation and user attributes
+  - Responses build on previous context and user profile
+  - Context limits prevent memory issues while preserving user data
 - **Validation Points**:
-  - Responses show awareness of conversation history
-  - Context window management prevents memory issues
-  - Conversation quality remains high over extended chats
+  - User environment awareness maintained across turns
+  - Context window management includes user data
+  - Conversation quality remains high with context
+  - User-specific conversation patterns recognized
 
-### 4. Performance Testing
+### 5. Performance Testing
 
 #### 4.1 Response Time Testing
 
@@ -578,318 +884,450 @@ http://localhost:5001
   - Session data integrity is maintained
   - No connection or timeout issues
 
-### 5. Security Testing
+### 6. Security Testing
 
-#### 5.1 Input Validation
+#### 6.1 Authentication Security
 
-##### Test Case 5.1.1: Message Input Sanitization
-- **Test ID**: TC_033
+##### Test Case 6.1.1: Session Authentication Enforcement
+- **Test ID**: TC_044
 - **Test Type**: Security
 - **Priority**: High
-- **Description**: Verify user input is properly sanitized
-- **Test Data**: Various potentially malicious inputs (XSS, SQL injection attempts)
+- **Description**: Verify all protected endpoints require authentication
+- **Test Scenarios**: 
+  - Access chat API without session
+  - Access clear API without authentication
+  - Access debug endpoint without login
+  - Attempt to bypass authentication
+- **Expected Behavior**:
+  - All protected endpoints return 401 for unauthenticated requests
+  - No data is exposed without proper authentication
+  - Error messages don't reveal system information
+  - Redirect behavior works securely
+- **Validation Points**:
+  - Consistent 401 responses across all protected endpoints
+  - No session data leakage
+  - Secure redirect to login page
+  - No backend processing without authentication
+
+##### Test Case 6.1.2: User ID Validation Security
+- **Test ID**: TC_045
+- **Test Type**: Security
+- **Priority**: High
+- **Description**: Verify User ID validation prevents injection attacks
+- **Test Data**: Various malicious User ID inputs (XSS, SQL injection, path traversal)
+- **Expected Behavior**:
+  - Strict validation prevents malicious input
+  - Character restrictions are enforced server-side
+  - Length limits prevent buffer overflow attempts
+  - No code execution from User ID input
+- **Validation Points**:
+  - XSS attempts in User ID are blocked
+  - Special characters are properly rejected
+  - Length validation prevents overflow attacks
+  - Server validation matches client validation
+
+#### 6.2 Enhanced Input Validation
+
+##### Test Case 6.2.1: Message Input Sanitization with Context
+- **Test ID**: TC_046
+- **Test Type**: Security
+- **Priority**: High
+- **Description**: Verify user input sanitization with authentication context
+- **Prerequisites**: Authenticated user session
+- **Test Data**: Various potentially malicious inputs with user context
 - **Expected Behavior**:
   - Malicious scripts are neutralized
-  - HTML is escaped appropriately
+  - HTML is escaped appropriately in user context
   - No code execution occurs from user input
+  - User context doesn't enable privilege escalation
 - **Validation Points**:
-  - XSS attempts are blocked
+  - XSS attempts are blocked regardless of user context
   - HTML entities are properly escaped
   - No JavaScript execution from message content
-  - Server remains stable with malicious input
+  - User context isolation is maintained
 
-##### Test Case 5.1.2: File Upload Security (if applicable)
-- **Test ID**: TC_034
+##### Test Case 6.2.2: Browser Context Data Validation
+- **Test ID**: TC_047
 - **Test Type**: Security
 - **Priority**: Medium
-- **Description**: Verify file upload functionality is secure
-- **Test Data**: Various file types including potentially malicious files
+- **Description**: Verify browser context data is validated and sanitized
+- **Test Data**: Malicious browser details in login request
 - **Expected Behavior**:
-  - Only allowed file types are accepted
-  - File size limits are enforced
-  - Files are scanned for malicious content
+  - Browser data is validated before storage
+  - Malicious JavaScript in browser details is neutralized
+  - Size limits prevent DoS attacks
+  - Context data doesn't affect security
 - **Validation Points**:
-  - Executable files are rejected
-  - File type validation is strict
-  - Upload directory is secure
-  - No path traversal vulnerabilities
+  - Browser details are sanitized before storage
+  - No script execution from browser context
+  - Size limits prevent resource exhaustion
+  - Context data is properly escaped in responses
 
-#### 5.2 Authentication and Authorization
+#### 6.3 Session Security
 
-##### Test Case 5.2.1: Session Security
-- **Test ID**: TC_035
+##### Test Case 6.3.1: Enhanced Session Management Security
+- **Test ID**: TC_048
 - **Test Type**: Security
 - **Priority**: High
-- **Description**: Verify session management security
+- **Description**: Verify session security with user authentication
 - **Expected Behavior**:
   - Session IDs are cryptographically secure
+  - User sessions are properly isolated
   - Session hijacking is prevented
   - Sessions timeout appropriately
 - **Validation Points**:
   - Session IDs are not predictable
+  - User data isolation between sessions
   - HTTPS-only session cookies if using HTTPS
   - Session invalidation works correctly
-  - No session fixation vulnerabilities
 
-##### Test Case 5.2.2: API Endpoint Security
-- **Test ID**: TC_036
+##### Test Case 6.3.2: Logout Security
+- **Test ID**: TC_049
 - **Test Type**: Security
 - **Priority**: High
-- **Description**: Verify API endpoints have appropriate security measures
-- **Test Data**: Various HTTP methods and malformed requests
+- **Description**: Verify secure logout process
+- **Prerequisites**: Authenticated user session with data
 - **Expected Behavior**:
+  - All session data is properly cleared
+  - User cannot access protected resources after logout
+  - No residual authentication state remains
+  - Logout invalidates session server-side
+- **Validation Points**:
+  - Complete session cleanup on logout
+  - Protected endpoints reject requests after logout
+  - No client-side authentication persistence
+  - Server-side session invalidation
+
+#### 6.4 Enhanced API Endpoint Security
+
+##### Test Case 6.4.1: Authentication-Protected API Security
+- **Test ID**: TC_050
+- **Test Type**: Security
+- **Priority**: High
+- **Description**: Verify API endpoint security with authentication
+- **Test Data**: Various HTTP methods and attack vectors on protected endpoints
+- **Expected Behavior**:
+  - Authentication required for all protected endpoints
   - Only allowed HTTP methods are accepted
   - Rate limiting prevents abuse
   - Error messages don't reveal sensitive information
 - **Validation Points**:
+  - Consistent authentication enforcement
   - HTTP method restrictions are enforced
   - Rate limiting thresholds are appropriate
-  - Error responses are generic
-  - No information disclosure in headers
+  - Error responses are generic and safe
 
-#### 5.3 Data Protection
+##### Test Case 6.4.2: User Context Injection Prevention
+- **Test ID**: TC_051
+- **Test Type**: Security
+- **Priority**: Medium
+- **Description**: Verify user context cannot be manipulated for privilege escalation
+- **Test Data**: Attempts to inject malicious data into user context
+- **Expected Behavior**:
+  - User context is server-controlled
+  - Client cannot manipulate context data
+  - Context validation prevents injection
+  - No privilege escalation through context
+- **Validation Points**:
+  - Context data is validated and sanitized
+  - Client modifications to context are ignored
+  - No privilege escalation vectors exist
+  - Context isolation is maintained
 
-##### Test Case 5.3.1: Sensitive Data Handling
-- **Test ID**: TC_037
+#### 6.5 Data Protection with User Context
+
+##### Test Case 6.5.1: User Data Isolation
+- **Test ID**: TC_052
 - **Test Type**: Security
 - **Priority**: High
-- **Description**: Verify sensitive data is handled securely
+- **Description**: Verify user data is properly isolated between sessions
+- **Prerequisites**: Multiple user sessions with different data
 - **Expected Behavior**:
-  - API keys are not exposed in client code
+  - Users cannot access other users' data
+  - Chat history is isolated per user
+  - Session data doesn't cross user boundaries
+  - User context is properly scoped
+- **Validation Points**:
+  - No cross-user data leakage
+  - Chat history isolation is maintained
+  - User context scoping is secure
+  - Session boundaries are enforced
+
+##### Test Case 6.5.2: Enhanced Sensitive Data Handling
+- **Test ID**: TC_053
+- **Test Type**: Security
+- **Priority**: High
+- **Description**: Verify sensitive data handling with user context
+- **Expected Behavior**:
+  - API keys are not exposed to any user
   - User conversations are not logged inappropriately
   - Sensitive configuration is protected
+  - User context doesn't expose sensitive data
 - **Validation Points**:
   - No credentials in browser developer tools
   - Logs don't contain user message content
   - Environment variables are properly secured
-  - Database connections are encrypted if applicable
+  - User context doesn't reveal system secrets
 
-##### Test Case 5.3.2: HTTPS Configuration
-- **Test ID**: TC_038
-- **Test Type**: Security
-- **Priority**: Medium
-- **Description**: Verify HTTPS is properly configured for production
-- **Prerequisites**: Production deployment with SSL certificate
-- **Expected Behavior**:
-  - All traffic is encrypted
-  - HTTP redirects to HTTPS
-  - Security headers are present
-- **Validation Points**:
-  - SSL certificate is valid and not expired
-  - HSTS headers are configured
-  - No mixed content warnings
-  - TLS version is current and secure
+### 7. Error Handling and Edge Cases
 
-### 6. Error Handling and Edge Cases
+#### 7.1 Authentication Error Handling
 
-#### 6.1 Network and Connectivity
-
-##### Test Case 6.1.1: Network Interruption Handling
-- **Test ID**: TC_039
+##### Test Case 7.1.1: Session Expiration During Usage
+- **Test ID**: TC_054
 - **Test Type**: Error Handling
 - **Priority**: High
-- **Description**: Verify application handles network interruptions gracefully
-- **Test Scenarios**: Simulated network disconnection during message sending
+- **Description**: Verify graceful handling of session expiration during active usage
+- **Test Scenarios**: Simulate session timeout while user is interacting with chat
 - **Expected Behavior**:
-  - User is notified of connection issues
-  - Messages are queued or retry mechanisms activate
-  - Application recovers when connection is restored
+  - User is immediately notified of session expiration
+  - Automatic redirect to login page occurs
+  - Current conversation context is lost (expected behavior)
+  - Clear messaging about why redirect occurred
 - **Validation Points**:
-  - Error messages are informative and actionable
-  - No data loss occurs during interruptions
-  - Retry logic works appropriately
+  - Session expiration detection is prompt
+  - Error messages are user-friendly and actionable
+  - No data corruption during session expiration
+  - Smooth redirect flow to re-authentication
+
+##### Test Case 7.1.2: Invalid Authentication State Recovery
+- **Test ID**: TC_055
+- **Test Type**: Error Handling
+- **Priority**: High
+- **Description**: Verify recovery from invalid authentication states
+- **Test Scenarios**: Corrupted session data, malformed authentication tokens
+- **Expected Behavior**:
+  - Invalid states are detected and handled
+  - User is securely redirected to login
+  - No system instability from invalid auth state
+  - Clear error messaging for authentication issues
+- **Validation Points**:
+  - Invalid authentication states are detected
+  - Secure cleanup of corrupted session data
+  - Application remains stable during auth recovery
+  - User experience is smooth during recovery
+
+#### 7.2 Network and Connectivity with Authentication
+
+##### Test Case 7.2.1: Network Interruption with User Context
+- **Test ID**: TC_056
+- **Test Type**: Error Handling
+- **Priority**: High
+- **Description**: Verify application handles network interruptions while maintaining user context
+- **Prerequisites**: Authenticated user session
+- **Test Scenarios**: Simulated network disconnection during authenticated chat session
+- **Expected Behavior**:
+  - User context is preserved during network issues
+  - Connection status is communicated clearly
+  - Session remains valid during short interruptions
+  - Automatic recovery when connection restored
+- **Validation Points**:
+  - User context preservation during network issues
+  - Error messages reference user's environment
+  - Session timeout is appropriate for network interruptions
   - UI reflects connection status accurately
 
-##### Test Case 6.1.2: AWS Service Unavailability
-- **Test ID**: TC_040
+##### Test Case 7.2.2: AWS Service Unavailability with User Sessions
+- **Test ID**: TC_057
 - **Test Type**: Error Handling
 - **Priority**: High
-- **Description**: Verify handling when AWS Bedrock service is unavailable
+- **Description**: Verify handling when AWS Bedrock service is unavailable for authenticated users
+- **Prerequisites**: Authenticated user sessions
 - **Expected Behavior**:
   - Service errors are detected quickly
-  - Users receive appropriate error messages
-  - Application doesn't crash or hang
-  - Fallback behavior is implemented if available
+  - Users receive personalized error messages
+  - User sessions remain valid during service outage
+  - Context is preserved for service recovery
 - **Validation Points**:
-  - Error detection is prompt (< 30 seconds)
-  - Error messages suggest possible solutions
-  - Application remains responsive
-  - Service recovery is automatic when possible
+  - Error detection includes user context
+  - Error messages are personalized when appropriate
+  - User sessions don't break on service errors
+  - Service recovery restores full functionality
 
-#### 6.2 Data Validation and Limits
+#### 7.3 Enhanced Data Validation and Limits
 
-##### Test Case 6.2.1: Message Length Limits
-- **Test ID**: TC_041
+##### Test Case 7.3.1: Message Length Limits with User Context
+- **Test ID**: TC_058
 - **Test Type**: Error Handling
 - **Priority**: Medium
-- **Description**: Verify handling of extremely long messages
-- **Test Data**: Messages exceeding reasonable length limits
+- **Description**: Verify handling of extremely long messages with user context preservation
+- **Prerequisites**: Authenticated user session
+- **Test Data**: Messages exceeding reasonable length limits from authenticated users
 - **Expected Behavior**:
   - Length limits are enforced consistently
-  - Users receive clear feedback about limits
+  - Users receive personalized feedback about limits
+  - User context is preserved during validation
   - No system instability from oversized input
 - **Validation Points**:
-  - Character/token limits are clearly communicated
-  - Validation occurs on both client and server
-  - Error messages specify actual limits
+  - Character/token limits account for user context
+  - Validation occurs for authenticated users
+  - Error messages maintain user session context
   - Performance remains stable with large inputs
 
-##### Test Case 6.2.2: Rapid Message Submission
-- **Test ID**: TC_042
+##### Test Case 7.3.2: Rapid Message Submission by Authenticated Users
+- **Test ID**: TC_059
 - **Test Type**: Error Handling
 - **Priority**: Medium
-- **Description**: Verify handling of rapid successive message submissions
-- **Test Data**: Multiple messages sent in quick succession
+- **Description**: Verify handling of rapid successive message submissions from authenticated users
+- **Prerequisites**: Authenticated user session
+- **Test Data**: Multiple messages sent in quick succession by logged-in user
 - **Expected Behavior**:
-  - Rate limiting prevents abuse
-  - Messages are processed in order
-  - No race conditions or data corruption
+  - Rate limiting considers user context
+  - Messages are processed in order per user
+  - User session remains stable during rapid input
+  - Per-user rate limiting prevents abuse
 - **Validation Points**:
-  - Rate limiting is user-friendly
-  - Message ordering is preserved
-  - System remains stable under rapid input
-  - Queue management works correctly
+  - Rate limiting is applied per authenticated user
+  - Message ordering is preserved within user session
+  - System remains stable under user load
+  - Queue management works per user context
 
-#### 6.3 Browser Compatibility Edge Cases
+#### 7.4 Browser and User Context Edge Cases
 
-##### Test Case 6.3.1: JavaScript Disabled
-- **Test ID**: TC_043
+##### Test Case 7.4.1: Browser Context Data Corruption
+- **Test ID**: TC_060
+- **Test Type**: Error Handling
+- **Priority**: Medium
+- **Description**: Verify handling of corrupted or malformed browser context data
+- **Test Scenarios**: Invalid browser details, missing context properties, malformed data
+- **Expected Behavior**:
+  - Application degrades gracefully with invalid context
+  - User can still authenticate and use basic features
+  - AI responses adapt to limited context information
+  - Error logging helps identify context issues
+- **Validation Points**:
+  - Graceful fallback with invalid browser context
+  - Core functionality works without complete context
+  - Error messages don't expose context processing issues
+  - User experience remains acceptable
+
+##### Test Case 7.4.2: Inconsistent User Context During Session
+- **Test ID**: TC_061
 - **Test Type**: Error Handling
 - **Priority**: Low
-- **Description**: Verify graceful degradation when JavaScript is disabled
+- **Description**: Verify handling when user context changes during session
+- **Test Scenarios**: Browser window resize, device orientation change, browser zoom
 - **Expected Behavior**:
-  - Application shows appropriate message
-  - Basic functionality may be limited but communicated
-  - No broken interface elements
+  - Context updates are handled smoothly
+  - UI adapts to context changes appropriately
+  - Session remains stable during context updates
+  - AI responses can adapt to updated context
 - **Validation Points**:
-  - Clear message about JavaScript requirement
-  - No JavaScript errors or broken elements
-  - Alternative access methods if available
-  - Professional appearance maintained
+  - Dynamic context updates don't break session
+  - UI responsiveness to context changes
+  - No context-related errors in logs
+  - Smooth user experience during context changes
 
-##### Test Case 6.3.2: Outdated Browser Support
-- **Test ID**: TC_044
-- **Test Type**: Error Handling
-- **Priority**: Low
-- **Description**: Verify handling of outdated browser versions
-- **Test Data**: Browsers with limited ES6/modern JavaScript support
-- **Expected Behavior**:
-  - Polyfills provide basic functionality
-  - Users receive guidance about browser updates
-  - Core features work or fail gracefully
-- **Validation Points**:
-  - Browser compatibility warnings are helpful
-  - No unhandled JavaScript errors
-  - Basic chat functionality works if possible
-  - Professional error messaging
+### 8. Accessibility Testing
 
-### 7. Accessibility Testing
+#### 8.1 WCAG Compliance
 
-#### 7.1 WCAG Compliance
-
-##### Test Case 7.1.1: Keyboard Navigation
-- **Test ID**: TC_045
+##### Test Case 8.1.1: Keyboard Navigation with Authentication
+- **Test ID**: TC_062
 - **Test Type**: Accessibility
 - **Priority**: High
-- **Description**: Verify full keyboard navigation support
+- **Description**: Verify full keyboard navigation support throughout authentication flow
 - **Expected Behavior**:
-  - All interactive elements are reachable via keyboard
-  - Tab order is logical and intuitive
-  - Focus indicators are clearly visible
-  - Keyboard shortcuts work as documented
+  - Login form is fully keyboard accessible
+  - All chat interface elements are reachable via keyboard
+  - Tab order is logical through login and chat flows
+  - Focus indicators are clearly visible across all states
+  - Keyboard shortcuts work in both login and chat contexts
 - **Validation Points**:
-  - Tab navigation covers all interactive elements
+  - Tab navigation covers login form and chat interface
   - Focus indicators meet contrast requirements
-  - No keyboard traps exist
+  - No keyboard traps in authentication flow
   - Enter and Space keys activate buttons appropriately
 
-##### Test Case 7.1.2: Screen Reader Compatibility
-- **Test ID**: TC_046
+##### Test Case 8.1.2: Screen Reader Compatibility with User Context
+- **Test ID**: TC_063
 - **Test Type**: Accessibility
 - **Priority**: High
-- **Description**: Verify compatibility with screen reading software
+- **Description**: Verify screen reader compatibility across authentication and chat flows
 - **Test Tools**: NVDA, JAWS, or VoiceOver
 - **Expected Behavior**:
-  - All content is read appropriately
-  - Interactive elements have proper labels
-  - Page structure is conveyed correctly
-  - Dynamic content updates are announced
+  - Login form is properly announced
+  - User context changes are communicated
+  - Chat interface transitions are announced
+  - Dynamic content updates include user context
 - **Validation Points**:
-  - Alt text for images is descriptive
-  - Form labels are properly associated
-  - Headings provide logical document structure
-  - ARIA labels enhance non-obvious interactions
+  - Form labels for login are properly associated
+  - User authentication state is announced
+  - Chat messages include user context when relevant
+  - ARIA labels enhance authentication interactions
 
-##### Test Case 7.1.3: Color and Contrast Accessibility
-- **Test ID**: TC_047
+##### Test Case 8.1.3: Color and Contrast Accessibility with User Context
+- **Test ID**: TC_064
 - **Test Type**: Accessibility
 - **Priority**: Medium
-- **Description**: Verify color contrast and color-independent design
+- **Description**: Verify color contrast and accessibility across login and chat interfaces
 - **Expected Behavior**:
-  - Text meets WCAG contrast ratio requirements
-  - Information isn't conveyed by color alone
-  - High contrast mode is supported
+  - Login form meets WCAG contrast requirements
+  - Chat interface contrast is accessible
+  - User status indicators have non-color meaning
+  - High contrast mode works in both contexts
 - **Validation Points**:
-  - Contrast ratios meet AA standards (4.5:1 for normal text)
-  - Status indicators have non-color meaning
-  - Focus states are visible in high contrast mode
-  - Color blind users can use all features
+  - Contrast ratios meet AA standards across both interfaces
+  - Authentication status has non-color indicators
+  - User context information is accessible
+  - Color blind users can complete full authentication flow
 
-### 8. Cross-Browser Compatibility
+### 9. Cross-Browser Compatibility
 
-#### 8.1 Major Browser Support
+#### 9.1 Major Browser Support with Authentication
 
-##### Test Case 8.1.1: Chrome Browser Compatibility
-- **Test ID**: TC_048
+##### Test Case 9.1.1: Chrome Browser Full Flow Compatibility
+- **Test ID**: TC_065
 - **Test Type**: Compatibility
 - **Priority**: High
-- **Description**: Verify full functionality in Google Chrome
+- **Description**: Verify complete authentication and chat flow in Google Chrome
 - **Test Versions**: Latest stable and previous major version
-- **Expected Behavior**: All features work as designed
+- **Expected Behavior**: Full login and chat functionality works as designed
 - **Validation Points**:
-  - UI renders correctly
-  - JavaScript functionality works
-  - Performance meets standards
-  - No browser-specific errors
+  - Login form renders and functions correctly
+  - Browser context collection works properly
+  - Chat UI renders correctly
+  - JavaScript functionality works throughout flow
+  - Performance meets standards across authentication
 
-##### Test Case 8.1.2: Firefox Browser Compatibility
-- **Test ID**: TC_049
+##### Test Case 9.1.2: Firefox Browser Full Flow Compatibility
+- **Test ID**: TC_066
 - **Test Type**: Compatibility
 - **Priority**: High
-- **Description**: Verify functionality in Mozilla Firefox
+- **Description**: Verify complete authentication and chat functionality in Mozilla Firefox
 - **Test Versions**: Latest stable and ESR version
-- **Expected Behavior**: All features work with equivalent performance
+- **Expected Behavior**: All features work with equivalent performance to Chrome
 - **Validation Points**:
-  - Cross-browser CSS compatibility
-  - JavaScript feature support
-  - WebSocket functionality
-  - Form handling works correctly
+  - Cross-browser CSS compatibility in login and chat
+  - JavaScript feature support throughout flow
+  - Browser context detection works correctly
+  - Session management functions properly
 
-##### Test Case 8.1.3: Safari Browser Compatibility
-- **Test ID**: TC_050
+##### Test Case 9.1.3: Safari Browser Full Flow Compatibility
+- **Test ID**: TC_067
 - **Test Type**: Compatibility
 - **Priority**: Medium
-- **Description**: Verify functionality in Safari browser
+- **Description**: Verify complete functionality in Safari browser
 - **Test Platforms**: macOS Safari and iOS Safari
-- **Expected Behavior**: Core functionality works on Apple platforms
+- **Expected Behavior**: Core authentication and chat functionality works on Apple platforms
 - **Validation Points**:
-  - WebKit-specific CSS renders correctly
-  - Touch interactions work on iOS
-  - Performance is acceptable
-  - No Safari-specific JavaScript issues
+  - WebKit-specific CSS renders correctly in both interfaces
+  - Touch interactions work on iOS throughout flow
+  - Browser context collection works on Apple devices
+  - Performance is acceptable across authentication flow
 
-##### Test Case 8.1.4: Edge Browser Compatibility
-- **Test ID**: TC_051
+##### Test Case 9.1.4: Edge Browser Full Flow Compatibility
+- **Test ID**: TC_068
 - **Test Type**: Compatibility
 - **Priority**: Medium
-- **Description**: Verify functionality in Microsoft Edge
+- **Description**: Verify complete functionality in Microsoft Edge
 - **Test Versions**: Latest Chromium-based Edge
-- **Expected Behavior**: Full compatibility with Chrome-like behavior
+- **Expected Behavior**: Full compatibility with Chrome-like behavior throughout flow
 - **Validation Points**:
   - UI consistency with other Chromium browsers
-  - All JavaScript features work
-  - Performance metrics are comparable
-  - Windows integration features don't interfere
+  - All JavaScript features work in login and chat
+  - Browser context detection includes Edge-specific details
+  - Performance metrics are comparable to Chrome
 
 ---
 
