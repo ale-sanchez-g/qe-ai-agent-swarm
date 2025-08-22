@@ -14,9 +14,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get install -y nodejs \
     && rm -rf /var/lib/apt/lists/*
 
-# Install uv for uvx command (needed for MCP server fetch)
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh
-ENV PATH="/root/.cargo/bin:$PATH"
+# Install uv using pip (more reliable for Docker)
+RUN pip install uv && uv --version
+
+# Install MCP servers using uv
+RUN uv tool install mcp-atlassian --python 3.12 || \
+    pip install mcp-atlassian
 
 # Copy requirements and install Python dependencies
 COPY requirements.txt .
