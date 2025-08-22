@@ -12,22 +12,19 @@
     <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
 </head>
 <body>
-    <div class="container-fluid h-100">
-        <div class="row h-100">
-            <!-- Main Chat Area -->
-            <div class="col-12">
-                <!-- Header -->
-                <div class="chat-header">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div class="d-flex align-items-center">
-                            <i class="bi bi-robot me-3 text-primary" style="font-size: 1.75rem;"></i>
-                            <div>
-                                <h4 class="mb-0">AI Chat Assistant</h4>
-                                <small class="text-muted">Powered by LaunchDarkly & AWS Bedrock</small>
-                            </div>
-                        </div>
-                        <div class="d-flex align-items-center">
-                            <span id="status-indicator" class="status-dot me-3"></span>
+    <div class="container-fluid">
+        <!-- Header -->
+        <div class="chat-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-robot me-3 text-primary" style="font-size: 1.75rem;"></i>
+                    <div>
+                        <h4 class="mb-0">AI Chat Assistant</h4>
+                        <small class="text-muted">Powered by LaunchDarkly & AWS Bedrock</small>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center">
+                    <span id="status-indicator" class="status-dot me-3"></span>
                             <button id="clear-chat" class="btn btn-outline-secondary btn-sm me-2">
                                 <i class="bi bi-trash me-1"></i> Clear Chat
                             </button>
@@ -49,10 +46,10 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- Chat Messages -->
-                <div class="chat-container">
-                    <div id="chat-messages" class="chat-messages">
+        
+        <!-- Chat Messages -->
+        <div class="chat-container">
+            <div id="chat-messages" class="chat-messages">
                         <!-- Welcome message -->
                         <div class="message assistant-message">
                             <div class="message-avatar">
@@ -112,8 +109,7 @@
                 </div>
             </div>
         </div>
-    </div>
-
+    
     <!-- Toast for notifications -->
     <div class="toast-container position-fixed bottom-0 end-0 p-3">
         <div id="notification-toast" class="toast" role="alert">
