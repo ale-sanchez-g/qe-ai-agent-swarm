@@ -3,9 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Chat Assistant</title>
+    <title>AI Chat Assistant - Professional Interface</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
 </head>
 <body>
@@ -17,23 +20,30 @@
                 <div class="chat-header">
                     <div class="d-flex justify-content-between align-items-center">
                         <div class="d-flex align-items-center">
-                            <i class="bi bi-robot me-2 text-primary" style="font-size: 1.5rem;"></i>
-                            <h4 class="mb-0">AI Chat Assistant</h4>
+                            <i class="bi bi-robot me-3 text-primary" style="font-size: 1.75rem;"></i>
+                            <div>
+                                <h4 class="mb-0">AI Chat Assistant</h4>
+                                <small class="text-muted">Powered by LaunchDarkly & AWS Bedrock</small>
+                            </div>
                         </div>
                         <div class="d-flex align-items-center">
-                            <span id="status-indicator" class="status-dot me-2"></span>
+                            <span id="status-indicator" class="status-dot me-3"></span>
                             <button id="clear-chat" class="btn btn-outline-secondary btn-sm me-2">
-                                <i class="bi bi-trash"></i> Clear
+                                <i class="bi bi-trash me-1"></i> Clear Chat
                             </button>
                             <div class="dropdown">
                                 <button class="btn btn-outline-primary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                    <i class="bi bi-gear"></i>
+                                    <i class="bi bi-gear me-1"></i> Settings
                                 </button>
-                                <ul class="dropdown-menu">
-                                    <li><span class="dropdown-item-text small">Powered by LaunchDarkly</span></li>
-                                    <li><span class="dropdown-item-text small">AWS Bedrock Integration</span></li>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li><span class="dropdown-item-text"><strong>Integrations</strong></span></li>
+                                    <li><span class="dropdown-item-text">• LaunchDarkly AI Config</span></li>
+                                    <li><span class="dropdown-item-text">• AWS Bedrock Runtime</span></li>
+                                    <li><span class="dropdown-item-text">• Observability Plugin</span></li>
                                     <li><hr class="dropdown-divider"></li>
-                                    <li><button class="dropdown-item" id="health-check">Check Status</button></li>
+                                    <li><button class="dropdown-item" id="health-check">
+                                        <i class="bi bi-activity me-2"></i>System Health Check
+                                    </button></li>
                                 </ul>
                             </div>
                         </div>
@@ -50,8 +60,16 @@
                             </div>
                             <div class="message-content">
                                 <div class="message-bubble">
-                                    <p>Hello! I'm your AI assistant. How can I help you today?</p>
-                                    <small class="message-time">Welcome</small>
+                                    <p><strong>Welcome to your AI Assistant!</strong></p>
+                                    <p>I'm here to help you with questions, analysis, coding assistance, and much more. Feel free to ask me anything!</p>
+                                    <p><em>Features:</em></p>
+                                    <ul>
+                                        <li>Natural language processing</li>
+                                        <li>Code analysis and generation</li>
+                                        <li>Document analysis</li>
+                                        <li>Research assistance</li>
+                                    </ul>
+                                    <small class="message-time">System Ready</small>
                                 </div>
                             </div>
                         </div>
@@ -77,15 +95,19 @@
                 <!-- Input Area -->
                 <div class="chat-input-container">
                     <div class="input-group">
-                        <input type="text" id="message-input" class="form-control" 
-                               placeholder="Type your message here..." 
-                               maxlength="1000">
+                        <textarea id="message-input" class="form-control" 
+                               placeholder="Type your message here... (supports markdown formatting)" 
+                               maxlength="2000"
+                               rows="1"></textarea>
                         <button class="btn btn-primary" type="button" id="send-button">
-                            <i class="bi bi-send"></i>
+                            <i class="bi bi-send-fill"></i>
                         </button>
                     </div>
                     <div class="input-help-text">
-                        <small class="text-muted">Press Enter to send • Powered by LaunchDarkly + AWS Bedrock</small>
+                        <small class="text-muted">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Press <kbd>Enter</kbd> to send • <kbd>Shift+Enter</kbd> for new line • Supports **bold**, *italic*, `code`, and lists
+                        </small>
                     </div>
                 </div>
             </div>
