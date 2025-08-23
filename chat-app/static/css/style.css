@@ -613,7 +613,7 @@ body, html {
         flex: 1;
         min-height: 0;
         /* Ensure space for input area - increased to prevent content hiding */
-        padding-bottom: calc(1rem + 140px); /* Increased space for input area to prevent hiding */
+        padding-bottom: calc(1rem + 180px); /* Further increased space for input area to prevent hiding */
         /* Ensure messages are fully visible */
         overflow-y: auto;
         overflow-x: hidden;
@@ -649,7 +649,7 @@ body, html {
     
     /* Fixed input area for mobile - always visible */
     .chat-input-container {
-        padding: 0.875rem 1rem; /* Reduced vertical padding */
+        padding: 0.625rem 1rem; /* Further reduced vertical padding */
         background: var(--background-secondary);
         border-top: 1px solid var(--border-color);
         position: fixed;
@@ -660,21 +660,21 @@ body, html {
         backdrop-filter: blur(12px);
         background: rgba(255, 255, 255, 0.98);
         /* Account for safe area */
-        padding-bottom: calc(0.875rem + env(safe-area-inset-bottom, 0)); /* Reduced padding */
+        padding-bottom: calc(0.625rem + env(safe-area-inset-bottom, 0)); /* Further reduced padding */
         box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
-        max-height: 120px; /* Add max height to prevent input area from being too large */
+        max-height: 100px; /* Reduced max height to prevent input area from being too large */
     }
     
     #message-input {
-        padding: 0.875rem 1rem;
+        padding: 0.75rem 1rem; /* Reduced padding */
         font-size: 16px; /* Prevent zoom on iOS - minimum 16px required */
         border-radius: var(--radius-lg);
         min-height: 44px; /* iOS touch target minimum */
-        max-height: 80px; /* Reduced max height for better space management */
+        max-height: 60px; /* Further reduced max height for better space management */
     }
     
     #send-button {
-        padding: 0.875rem 1rem;
+        padding: 0.75rem 1rem; /* Reduced padding */
         min-width: 50px;
         min-height: 44px; /* iOS touch target minimum */
         border-radius: var(--radius-lg);
@@ -682,7 +682,7 @@ body, html {
     
     .input-help-text {
         font-size: 0.8rem;
-        margin-top: 0.5rem;
+        margin-top: 0.375rem; /* Reduced margin */
         text-align: center;
     }
 }
@@ -733,6 +733,7 @@ body, html {
     /* More aggressive space optimization */
     .chat-messages {
         padding: 0.75rem;
+        padding-bottom: calc(0.75rem + 180px); /* Increased bottom padding for small screens */
     }
     
     .message {
@@ -1070,7 +1071,7 @@ body, html {
 
 @media (max-width: 768px) {
     .keyboard-open .chat-messages {
-        padding-bottom: calc(1rem + 200px); /* Increased space when keyboard is open to prevent hiding */
+        padding-bottom: calc(1rem + 240px); /* Further increased space when keyboard is open to prevent hiding */
     }
 }
 
