@@ -33,5 +33,5 @@ echo "🔐 Loading environment variables..."
 export $(cat .env | xargs)
 
 # Start the application
-echo "🌐 Starting Flask application on http://localhost:5000"
+echo "🌐 Starting Flask application on http://localhost:5001"
 python app.py

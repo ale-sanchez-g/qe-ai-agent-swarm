@@ -93,12 +93,12 @@ docker-compose up --build
 
 # Or build manually
 docker build -t chat-app .
-docker run -p 5000:5000 --env-file .env chat-app
+docker run -p 5001:5001 --env-file .env chat-app
 ```
 
 ### 5. Testing
 
-1. **Open your browser** and navigate to: `http://localhost:5000`
+1. **Open your browser** and navigate to: `http://localhost:5001`
 
 2. **Run automated tests:**
    ```bash
@@ -107,7 +107,7 @@ docker run -p 5000:5000 --env-file .env chat-app
 
 3. **Check health status:**
    ```bash
-   curl http://localhost:5000/api/health
+   curl http://localhost:5001/api/health
    ```
 
 ## Features Overview
