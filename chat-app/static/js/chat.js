@@ -12,6 +12,14 @@ class ChatApp {
         this.logoutButton = document.getElementById('logout-button');
         this.statusIndicator = document.getElementById('status-indicator');
         
+        // Mobile menu elements
+        this.mobileStatusIndicator = document.getElementById('mobile-status-indicator');
+        this.mobileClearChatButton = document.getElementById('mobile-clear-chat');
+        this.mobileHealthCheckButton = document.getElementById('mobile-health-check');
+        this.mobileDebugConfigButton = document.getElementById('mobile-debug-config');
+        this.mobileLogoutButton = document.getElementById('mobile-logout-button');
+        this.mobileStatusText = document.querySelector('.mobile-status-text');
+        
         this.isTyping = false;
         this.messageCount = 0;
         this.init();
@@ -36,8 +44,25 @@ class ChatApp {
             this.logoutButton.addEventListener('click', () => this.logout());
         }
 
+        // Mobile menu event listeners
+        if (this.mobileClearChatButton) {
+            this.mobileClearChatButton.addEventListener('click', () => this.clearChat());
+        }
+        if (this.mobileHealthCheckButton) {
+            this.mobileHealthCheckButton.addEventListener('click', () => this.checkHealth());
+        }
+        if (this.mobileDebugConfigButton) {
+            this.mobileDebugConfigButton.addEventListener('click', () => this.debugConfig());
+        }
+        if (this.mobileLogoutButton) {
+            this.mobileLogoutButton.addEventListener('click', () => this.logout());
+        }
+
         // Auto-resize textarea
         this.messageInput.addEventListener('input', () => this.autoResizeInput());
+
+        // Mobile keyboard handling
+        this.setupMobileKeyboardHandling();
 
         // Check initial health status
         this.checkHealth();
@@ -371,10 +396,31 @@ ${data.launchdarkly_connected ? '✅' : '❌'} LaunchDarkly: ${data.launchdarkly
     updateStatusIndicator(status) {
         this.statusIndicator.className = `status-dot me-3 status-${status}`;
         
+        // Update mobile status indicator
+        if (this.mobileStatusIndicator) {
+            this.mobileStatusIndicator.className = `status-dot me-2 status-${status}`;
+        }
+        
+        // Update mobile status text
+        if (this.mobileStatusText) {
+            const statusText = {
+                'healthy': 'System Healthy',
+                'warning': 'System Warning',
+                'error': 'System Error'
+            };
+            this.mobileStatusText.textContent = statusText[status] || 'System Ready';
+        }
+        
         // Remove existing animation classes and add pulse for updates
         this.statusIndicator.style.animation = 'none';
+        if (this.mobileStatusIndicator) {
+            this.mobileStatusIndicator.style.animation = 'none';
+        }
         setTimeout(() => {
             this.statusIndicator.style.animation = 'pulse 2s infinite';
+            if (this.mobileStatusIndicator) {
+                this.mobileStatusIndicator.style.animation = 'pulse 2s infinite';
+            }
         }, 100);
     }
 
@@ -453,6 +499,90 @@ ${data.launchdarkly_connected ? '✅' : '❌'} LaunchDarkly: ${data.launchdarkly
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+
+    setupMobileKeyboardHandling() {
+        // Handle mobile viewport changes and keyboard behavior
+        let initialViewportHeight = window.innerHeight;
+        let isKeyboardOpen = false;
+
+        // Detect mobile devices
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        
+        if (!isMobile) return;
+
+        // Handle viewport resize (keyboard open/close)
+        const handleViewportChange = () => {
+            const currentHeight = window.innerHeight;
+            const heightDifference = initialViewportHeight - currentHeight;
+            
+            // If height decreased significantly, keyboard is likely open
+            if (heightDifference > 150 && !isKeyboardOpen) {
+                isKeyboardOpen = true;
+                document.body.classList.add('keyboard-open');
+                
+                // Ensure input stays visible when keyboard opens
+                setTimeout(() => {
+                    this.messageInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 300);
+                
+            } else if (heightDifference < 50 && isKeyboardOpen) {
+                isKeyboardOpen = false;
+                document.body.classList.remove('keyboard-open');
+                
+                // Reset scroll position when keyboard closes
+                setTimeout(() => {
+                    this.scrollToBottom();
+                }, 100);
+            }
+        };
+
+        // Listen for viewport changes
+        window.addEventListener('resize', handleViewportChange);
+        
+        // Handle focus/blur events for better UX
+        this.messageInput.addEventListener('focus', () => {
+            // Small delay to allow for keyboard animation
+            setTimeout(() => {
+                if (window.innerHeight < initialViewportHeight - 100) {
+                    this.messageInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, 300);
+        });
+
+        this.messageInput.addEventListener('blur', () => {
+            // Reset body position when input loses focus
+            setTimeout(() => {
+                if (!isKeyboardOpen) {
+                    document.body.classList.remove('keyboard-open');
+                }
+            }, 100);
+        });
+
+        // Handle orientation changes
+        window.addEventListener('orientationchange', () => {
+            setTimeout(() => {
+                initialViewportHeight = window.innerHeight;
+                isKeyboardOpen = false;
+                document.body.classList.remove('keyboard-open');
+                this.scrollToBottom();
+            }, 500);
+        });
+
+        // Visual viewport API support (more accurate for iOS)
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', () => {
+                const heightDifference = window.innerHeight - window.visualViewport.height;
+                
+                if (heightDifference > 150 && !isKeyboardOpen) {
+                    isKeyboardOpen = true;
+                    document.body.classList.add('keyboard-open');
+                } else if (heightDifference < 50 && isKeyboardOpen) {
+                    isKeyboardOpen = false;
+                    document.body.classList.remove('keyboard-open');
+                }
+            });
+        }
     }
 }
 
