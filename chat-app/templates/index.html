@@ -60,9 +60,11 @@
                                 <li><button class="dropdown-item" id="health-check">
                                     <i class="bi bi-activity me-2"></i>System Health Check
                                 </button></li>
+                                {% if feature_flags and feature_flags.show_debug_config %}
                                 <li><button class="dropdown-item" id="debug-config">
                                     <i class="bi bi-bug me-2"></i>Debug Configuration
                                 </button></li>
+                                {% endif %}
                                 <li><hr class="dropdown-divider"></li>
                                 <li><button class="dropdown-item text-danger" id="logout-button">
                                     <i class="bi bi-box-arrow-right me-2"></i>Logout
@@ -224,11 +226,13 @@
                 </div>
                 
                 <!-- Advanced - Single Button -->
+                {% if feature_flags and feature_flags.show_debug_config %}
                 <div class="mobile-menu-section">
                     <button id="mobile-debug-config" class="btn btn-outline-secondary btn-sm w-100">
                         <i class="bi bi-bug me-2"></i>Debug Configuration
                     </button>
                 </div>
+                {% endif %}
             </div>
             
             <!-- Logout Button - Fixed at Bottom -->

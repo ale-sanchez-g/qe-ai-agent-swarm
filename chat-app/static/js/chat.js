@@ -37,9 +37,12 @@ class ChatApp {
 
         this.clearChatButton.addEventListener('click', () => this.clearChat());
         this.healthCheckButton.addEventListener('click', () => this.checkHealth());
+        
+        // Debug config button might not exist if feature flag is disabled
         if (this.debugConfigButton) {
             this.debugConfigButton.addEventListener('click', () => this.debugConfig());
         }
+        
         if (this.logoutButton) {
             this.logoutButton.addEventListener('click', () => this.logout());
         }
@@ -51,9 +54,12 @@ class ChatApp {
         if (this.mobileHealthCheckButton) {
             this.mobileHealthCheckButton.addEventListener('click', () => this.checkHealth());
         }
+        
+        // Mobile debug config button might not exist if feature flag is disabled
         if (this.mobileDebugConfigButton) {
             this.mobileDebugConfigButton.addEventListener('click', () => this.debugConfig());
         }
+        
         if (this.mobileLogoutButton) {
             this.mobileLogoutButton.addEventListener('click', () => this.logout());
         }
@@ -355,7 +361,10 @@ ${data.launchdarkly_connected ? '✅' : '❌'} LaunchDarkly: ${data.launchdarkly
 • Using Fallback: ${data.using_fallback}
 • SDK Initialized: ${data.sdk_initialized}
 
-👤 User Context:
+� Feature Flags:
+• Show Debug Config: ${data.feature_flags?.show_debug_config !== undefined ? data.feature_flags.show_debug_config : 'Unknown'}
+
+�👤 User Context:
 • User ID: ${data.user_context?.key || 'Unknown'}
 • Name: ${data.user_context?.name || 'Unknown'}
 • Kind: ${data.user_context?.kind || 'Unknown'}

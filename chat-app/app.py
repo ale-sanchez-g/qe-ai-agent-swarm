@@ -26,6 +26,9 @@ AWS_REGION = os.getenv('AWS_REGION', 'us-east-1')
 LAUNCHDARKLY_SDK_KEY = os.getenv('LAUNCHDARKLY_SDK_KEY')
 AI_CONFIG_KEY = os.getenv('LAUNCHDARKLY_AI_CONFIG_KEY', 'chat-ai-config')
 
+# Feature flags used in this application:
+# - show-debug-config: Boolean flag to control visibility of debug configuration button
+
 # Global variables
 bedrock_client = None
 aiclient = None
@@ -130,6 +133,29 @@ def get_user_context():
     
     return context_builder.build()
 
+def get_feature_flags():
+    """Get feature flags from LaunchDarkly for the current user"""
+    context = get_user_context()
+    
+    if not context or not ldclient.get().is_initialized():
+        return {
+            'show_debug_config': False  # Default to hiding debug config
+        }
+    
+    try:
+        # Evaluate feature flags
+        show_debug_config = ldclient.get().variation('show-debug-config', context, False)
+        
+        return {
+            'show_debug_config': show_debug_config
+        }
+    except Exception as e:
+        print(f"❌ Error evaluating feature flags: {e}")
+        observe.record_log(f"Error evaluating feature flags: {e}", logging.ERROR)
+        return {
+            'show_debug_config': False  # Default to hiding debug config on error
+        }
+
 def get_ai_config(user_message):
     """Get AI configuration from LaunchDarkly"""
     context = get_user_context()
@@ -182,7 +208,12 @@ def index():
     if 'chat_history' not in session:
         session['chat_history'] = []
     
-    return render_template('index.html', user_id=session.get('user_id', 'Unknown'))
+    # Get feature flags for the current user
+    feature_flags = get_feature_flags()
+    
+    return render_template('index.html', 
+                         user_id=session.get('user_id', 'Unknown'),
+                         feature_flags=feature_flags)
 
 @app.route('/api/login', methods=['POST'])
 def login():
@@ -452,6 +483,9 @@ def debug_config():
         if not context:
             return jsonify({'error': 'Invalid user context'}), 400
         
+        # Get feature flags
+        feature_flags = get_feature_flags()
+        
         # Try to get the AI config
         default_config = AIConfig(
             enabled=True,
@@ -493,6 +527,7 @@ def debug_config():
             'config_provider': config_value.provider.name if config_value.provider else None,
             'using_fallback': config_value == default_config,
             'sdk_initialized': ldclient.get().is_initialized(),
+            'feature_flags': feature_flags,
             'session_info': {
                 'user_id': session.get('user_id'),
                 'browser_details': session.get('browser_details', {}),
