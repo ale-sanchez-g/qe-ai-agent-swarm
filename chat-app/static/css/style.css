@@ -1390,3 +1390,159 @@ kbd {
         --border-color: #334155;
     }
 }
+
+/* Knowledge Base Content Styling */
+.knowledge-indicator {
+    background: linear-gradient(135deg, #1e40af, #3b82f6);
+    color: white;
+    padding: 0.375rem 0.75rem;
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    margin-bottom: 0.25rem;
+    box-shadow: var(--shadow-light);
+}
+
+.knowledge-indicator i {
+    font-size: 0.875rem;
+}
+
+.message-bubble.has-knowledge {
+    border: 2px solid #3b82f6;
+    background: linear-gradient(to bottom, #eff6ff, #ffffff);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+    min-height: 60px; /* Ensure minimum height */
+}
+
+.official-info-header {
+    background: linear-gradient(135deg, #065f46, #059669);
+    color: white;
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    margin: 0.75rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: var(--shadow-medium);
+    font-size: 0.875rem;
+}
+
+.source-attribution {
+    background: #f0f9ff;
+    border-left: 4px solid #0284c7;
+    padding: 0.5rem 0.75rem;
+    margin: 0.5rem 0;
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    font-size: 0.875rem;
+    color: #0c4a6e;
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+}
+
+.company-disclaimer {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: var(--radius-md);
+    padding: 0.5rem 0.75rem;
+    margin: 0.5rem 0;
+    font-size: 0.875rem;
+    color: #166534;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.375rem;
+    font-style: italic;
+    line-height: 1.4;
+}
+
+.ai-disclaimer {
+    background: #fef3c7;
+    border: 1px solid #fcd34d;
+    border-radius: var(--radius-md);
+    padding: 0.5rem 0.75rem;
+    margin: 0.5rem 0;
+    font-size: 0.875rem;
+    color: #92400e;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.375rem;
+    font-style: italic;
+    line-height: 1.4;
+}
+
+/* Ensure content visibility */
+.message-bubble.has-knowledge .official-info-header,
+.message-bubble.has-knowledge .source-attribution,
+.message-bubble.has-knowledge .company-disclaimer,
+.message-bubble.has-knowledge p,
+.message-bubble.has-knowledge ul,
+.message-bubble.has-knowledge h1,
+.message-bubble.has-knowledge h2,
+.message-bubble.has-knowledge h3 {
+    opacity: 1;
+    display: block;
+}
+
+.message-bubble.has-knowledge p {
+    margin: 0.5rem 0;
+    color: var(--text-primary);
+    line-height: 1.5;
+}
+
+.message-bubble.has-knowledge ul {
+    margin: 0.5rem 0;
+    padding-left: 1.5rem;
+}
+
+.message-bubble.has-knowledge li {
+    margin: 0.25rem 0;
+    color: var(--text-primary);
+}
+
+/* Knowledge base content animations */
+.message.assistant-message .message-bubble.has-knowledge {
+    animation: knowledgeHighlight 0.6s ease-out;
+}
+
+@keyframes knowledgeHighlight {
+    0% {
+        border-color: #93c5fd;
+        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4);
+    }
+    50% {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 8px rgba(59, 130, 246, 0.1);
+    }
+    100% {
+        border-color: #3b82f6;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+    }
+}
+
+/* Mobile responsiveness for knowledge indicators */
+@media (max-width: 768px) {
+    .knowledge-indicator {
+        font-size: 0.6875rem;
+        padding: 0.25rem 0.5rem;
+    }
+    
+    .official-info-header {
+        font-size: 0.8125rem;
+        padding: 0.5rem 0.75rem;
+    }
+    
+    .source-attribution,
+    .company-disclaimer,
+    .ai-disclaimer {
+        font-size: 0.8125rem;
+        padding: 0.375rem 0.5rem;
+    }
+    
+    .message-bubble.has-knowledge {
+        min-height: 50px;
+    }
+}

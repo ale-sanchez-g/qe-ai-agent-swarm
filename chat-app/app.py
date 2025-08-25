@@ -12,6 +12,11 @@ from ldobserve import ObservabilityConfig, ObservabilityPlugin, observe
 from dotenv import load_dotenv
 import platform
 import json
+import re
+
+# Import knowledge base modules
+from knowledge_api import knowledge_bp
+from product_knowledge import get_knowledge_base, format_knowledge_for_chat
 
 # Load environment variables
 load_dotenv()
@@ -19,6 +24,9 @@ load_dotenv()
 # Initialize Flask app
 app = Flask(__name__)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'your-secret-key-change-this')
+
+# Register knowledge management blueprint
+app.register_blueprint(knowledge_bp)
 
 # Configuration
 AWS_PROFILE = os.getenv('AWS_PROFILE', 'qbe-split-poc')
@@ -227,7 +235,6 @@ def login():
             return jsonify({'error': 'User ID is required'}), 400
         
         # Validate user ID format (alphanumeric, dashes, underscores allowed)
-        import re
         if not re.match(r'^[a-zA-Z0-9_-]+$', user_id):
             return jsonify({'error': 'User ID can only contain letters, numbers, dashes, and underscores'}), 400
         
@@ -325,6 +332,34 @@ def chat():
             )
             return jsonify({'response': 'AI chat is currently disabled. Please try again later.'})
         
+        # Search knowledge base for relevant product information
+        knowledge_context = ""
+        try:
+            kb = get_knowledge_base()
+            search_results = kb.search_knowledge(
+                query=user_message,
+                max_results=3,
+                min_similarity=0.2  # Lowered threshold for better results
+            )
+            
+            if search_results:
+                knowledge_context = format_knowledge_for_chat(search_results, max_context_length=1500)
+                observe.record_log(
+                    f"Found {len(search_results)} relevant knowledge documents", 
+                    logging.INFO, 
+                    {
+                        "customID": session_trace_id,
+                        "user_id": session.get('user_id'),
+                        "knowledge_results": len(search_results)
+                    }
+                )
+        except Exception as e:
+            observe.record_log(
+                f"Knowledge base search failed: {str(e)}", 
+                logging.WARNING, 
+                {"customID": session_trace_id, "user_id": session.get('user_id')}
+            )
+        
         # Prepare messages for the API call
         messages = []
         system_messages = []
@@ -349,39 +384,53 @@ def chat():
                 system_messages.append({'text': msg.content})
         
         # Add enhanced system message with user context
-        user_id = session.get('user_id', 'Unknown')
-        browser_details = session.get('browser_details', {})
+        # user_id = session.get('user_id', 'Unknown')
+        # browser_details = session.get('browser_details', {})
         
-        context_prompt = f"""You are a helpful and professional AI assistant. 
+        context_prompt = f"""You are a helpful and professional AI assistant specialising in financial services and loan products. 
 
-USER CONTEXT:
-- User ID: {user_id}
-- Browser: {browser_details.get('browserName', 'Unknown')} {browser_details.get('browserVersion', '')}
-- Platform: {browser_details.get('platform', 'Unknown')}
-- Screen: {browser_details.get('screenResolution', 'Unknown')}
-- Language: {browser_details.get('language', 'Unknown')}
-- Timezone: {browser_details.get('timezone', 'Unknown')}
-- Device Type: {browser_details.get('deviceType', 'Unknown')}
+{knowledge_context}
 
-RESPONSE GUIDELINES:
-1. Use clear, well-structured formatting with proper paragraphs
-2. Use markdown-style formatting when appropriate:
-   - **Bold** for emphasis
-   - *Italic* for subtle emphasis  
-   - `code` for technical terms, commands, or short code snippets
-   - ```code blocks``` for longer code examples
+CRITICAL RESPONSE GUIDELINES - CONTENT SOURCE TRANSPARENCY:
+1. **Official Information**: When the knowledge base provides official product information (marked with 📚 or 📋), you MUST:
+   - Clearly state this information comes from official company documentation
+   - Use phrases like "According to our official product documentation..." or "Our company's official information states..."
+   - Include a disclaimer like "💼 *This information is from official company sources, not AI-generated*"
+   
+2. **AI-Generated Content**: For general advice, explanations, or information not from the knowledge base:
+   - Clearly indicate this is AI-generated guidance
+   - Use phrases like "Based on general financial principles..." or "As an AI assistant, I can suggest..."
+   - Include disclaimers like "🤖 *This is AI-generated guidance. Please verify with official sources*"
+
+3. **Mixed Responses**: When combining official and AI-generated content:
+   - Clearly separate and label each type of information
+   - Use section headers or bullet points to distinguish sources
+   - Always prioritize official documentation over AI-generated advice
+
+FORMATTING AND COMMUNICATION:
+4. Use clear, well-structured formatting with proper paragraphs
+5. Use markdown-style formatting when appropriate:
+   - **Bold** for emphasis and source indicators
+   - *Italic* for disclaimers
+   - `code` for technical terms
    - Use bullet points (- or *) for lists
    - Use numbered lists (1. 2. 3.) when order matters
-3. Break up long responses into digestible sections
-4. Use headers (## Header) to organize complex topics
-5. Be conversational but professional
-6. Provide examples when explaining concepts
-7. Consider the user's platform and browser when giving technical advice
-8. If providing time-sensitive information, consider their timezone
-9. Tailor interface recommendations based on their screen resolution and device type
-10. End responses with a brief summary or next steps when relevant
+6. Break up long responses into digestible sections
+7. Use headers (## Header) to organize complex topics
+8. Be conversational but professional
+9. Provide examples when explaining concepts
+10. Consider the user's platform and browser when giving technical advice
+11. If providing time-sensitive information, consider their timezone
+12. Tailor interface recommendations based on their screen resolution and device type
+13. **ALWAYS** end responses involving official product information with appropriate source attribution
+14. **NEVER** present AI-generated content as official company policy or documentation
 
-Always prioritize clarity and readability in your responses."""
+TRANSPARENCY REQUIREMENTS:
+- If no official documentation is available for a query, clearly state: "I don't have specific official documentation about this topic"
+- When making general recommendations, always include: "Please confirm details with our official sources or contact our team"
+- If information might be outdated, suggest: "For the most current information, please check our latest documentation or contact us directly"
+
+Always prioritize transparency, accuracy, and clear source attribution in your responses."""
         
         system_messages.append({'text': context_prompt})
         
@@ -469,6 +518,16 @@ def health_check():
         'aws_connected': bedrock_client is not None,
         'launchdarkly_connected': aiclient is not None
     })
+
+@app.route('/admin/knowledge')
+def knowledge_admin():
+    """Render the knowledge base management interface"""
+    # Check if user is authenticated
+    if 'authenticated' not in session or not session['authenticated']:
+        return render_template('login.html')
+    
+    return render_template('knowledge_admin.html', 
+                         user_id=session.get('user_id', 'Unknown'))
 
 @app.route('/api/debug', methods=['GET'])
 def debug_config():

@@ -145,15 +145,28 @@ class ChatApp {
 
         const avatarIcon = type === 'user' ? 'bi-person-fill' : 'bi-robot';
         
-        // Format the content based on type
-        const formattedContent = type === 'assistant' ? this.formatMessage(content) : this.escapeHtml(content);
+        // Format the content based on type and detect knowledge sources
+        let formattedContent;
+        let hasKnowledgeContent = false;
+        
+        if (type === 'assistant') {
+            formattedContent = this.formatMessage(content);
+            hasKnowledgeContent = this.detectKnowledgeContent(content);
+        } else {
+            formattedContent = this.escapeHtml(content);
+        }
+
+        // Add knowledge indicator if content includes official documentation
+        const knowledgeIndicator = hasKnowledgeContent ? 
+            '<div class="knowledge-indicator"><i class="bi bi-file-text"></i> Contains official company information</div>' : '';
 
         messageDiv.innerHTML = `
             <div class="message-avatar">
                 <i class="bi ${avatarIcon}"></i>
             </div>
             <div class="message-content">
-                <div class="message-bubble">
+                ${knowledgeIndicator}
+                <div class="message-bubble${hasKnowledgeContent ? ' has-knowledge' : ''}">
                     ${formattedContent}
                     <small class="message-time">${timeString}</small>
                 </div>
@@ -173,9 +186,36 @@ class ChatApp {
         this.autoScroll();
     }
 
+    detectKnowledgeContent(content) {
+        // Check for indicators that the content includes official documentation
+        const knowledgeIndicators = [
+            '📚 OFFICIAL PRODUCT INFORMATION',
+            '📋 SOURCE:',
+            '💼 *This information is from official company sources',
+            'According to our official product documentation',
+            'Our company\'s official information states',
+            'from official company sources'
+        ];
+        
+        return knowledgeIndicators.some(indicator => content.includes(indicator));
+    }
+
     formatMessage(content) {
         // Enhanced markdown-like formatting for AI responses
         let formatted = this.escapeHtml(content);
+
+        // Knowledge source indicators with special styling - fix regex patterns
+        formatted = formatted.replace(/📚 OFFICIAL PRODUCT INFORMATION[^:]*:/g, 
+            '<div class="official-info-header"><i class="bi bi-file-earmark-check"></i> $&</div>');
+        
+        formatted = formatted.replace(/📋 SOURCE: ([^\n\r]+)/g, 
+            '<div class="source-attribution"><i class="bi bi-building"></i> <strong>Source:</strong> $1</div>');
+        
+        formatted = formatted.replace(/💼 \*([^*]+)\*/g, 
+            '<div class="company-disclaimer"><i class="bi bi-shield-check"></i> $&</div>');
+        
+        formatted = formatted.replace(/🤖 \*([^*]+)\*/g, 
+            '<div class="ai-disclaimer"><i class="bi bi-robot"></i> $&</div>');
 
         // Code blocks (```code```)
         formatted = formatted.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
@@ -186,33 +226,27 @@ class ChatApp {
         // Bold (**text**)
         formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
         
-        // Italic (*text*)
-        formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>');
+        // Italic (*text*) - but avoid conflict with disclaimers
+        formatted = formatted.replace(/(?<!💼 )\*([^*🤖💼]+)\*(?!\*)/g, '<em>$1</em>');
         
         // Headers (## Header)
         formatted = formatted.replace(/^### (.*$)/gm, '<h3>$1</h3>');
         formatted = formatted.replace(/^## (.*$)/gm, '<h2>$1</h2>');
         formatted = formatted.replace(/^# (.*$)/gm, '<h1>$1</h1>');
         
-        // Lists
-        formatted = formatted.replace(/^\* (.*$)/gm, '<li>$1</li>');
-        formatted = formatted.replace(/^- (.*$)/gm, '<li>$1</li>');
-        formatted = formatted.replace(/^(\d+)\. (.*$)/gm, '<li>$1. $2</li>');
+        // Lists - improved pattern
+        formatted = formatted.replace(/^[\s]*[\*\-] (.+)$/gm, '<li>$1</li>');
+        formatted = formatted.replace(/^[\s]*(\d+)\. (.+)$/gm, '<li class="numbered">$1. $2</li>');
         
         // Wrap consecutive list items in ul tags
-        formatted = formatted.replace(/(<li>.*<\/li>)/gs, (match) => {
-            if (!match.includes('<ul>') && !match.includes('<ol>')) {
-                return '<ul>' + match + '</ul>';
-            }
-            return match;
-        });
+        formatted = formatted.replace(/(<li(?:\s+class="[^"]*")?>[^<]*<\/li>(?:\s*<li(?:\s+class="[^"]*")?>[^<]*<\/li>)*)/g, '<ul>$1</ul>');
         
-        // Line breaks
-        formatted = formatted.replace(/\n\n/g, '</p><p>');
+        // Line breaks - preserve structure better
+        formatted = formatted.replace(/\n\s*\n/g, '</p><p>');
         formatted = formatted.replace(/\n/g, '<br>');
         
         // Wrap in paragraphs if not already wrapped
-        if (!formatted.includes('<p>') && !formatted.includes('<h') && !formatted.includes('<ul>') && !formatted.includes('<pre>')) {
+        if (!formatted.includes('<p>') && !formatted.includes('<h') && !formatted.includes('<ul>') && !formatted.includes('<pre>') && !formatted.includes('<div class=')) {
             formatted = '<p>' + formatted + '</p>';
         }
 

@@ -184,3 +184,5 @@ logs/
 
 # MCP folders
 *-mcp/
+
+chat-app/knowledge_base/
