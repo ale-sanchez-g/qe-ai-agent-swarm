@@ -386,12 +386,23 @@ def chat():
         # Add enhanced system message with user context
         # user_id = session.get('user_id', 'Unknown')
         # browser_details = session.get('browser_details', {})
-        
+
+        # Log knowledge retrieval
+        observe.record_log(
+            f"Knowledge context retrieved: {knowledge_context}",
+            logging.INFO,
+            {"customID": session_trace_id, "user_id": session.get('user_id')}
+        )
+
         context_prompt = f"""You are a helpful and professional AI assistant specialising in financial services and loan products. 
 
 {knowledge_context}
 """
-        
+        observe.record_log(
+            f"Context prompt created: {context_prompt}",
+            logging.INFO,
+            {"customID": session_trace_id, "user_id": session.get('user_id')}
+        )
         system_messages.append({'text': context_prompt})
         
         # Call Bedrock API
