@@ -1546,3 +1546,281 @@ kbd {
         min-height: 50px;
     }
 }
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --primary-color: #3b82f6;
+        --primary-hover: #2563eb;
+        --secondary-color: #64748b;
+        --accent-color: #0ea5e9;
+        --success-color: #10b981;
+        --warning-color: #f59e0b;
+        --error-color: #ef4444;
+        --background-primary: #0f172a;
+        --background-secondary: #1e293b;
+        --text-primary: #f1f5f9;
+        --text-secondary: #94a3b8;
+        --border-color: #334155;
+        --shadow-light: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+        --shadow-medium: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+        --shadow-large: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+    }
+
+    body, html {
+        background: var(--background-primary);
+        color: var(--text-primary);
+    }
+
+    /* Header Dark Mode */
+    .chat-header {
+        background: var(--background-secondary);
+        border-bottom-color: var(--border-color);
+    }
+
+    .chat-header h4 {
+        color: var(--text-primary);
+    }
+
+    .chat-header small {
+        color: var(--text-secondary);
+    }
+
+    /* Chat Container Dark Mode */
+    .chat-container {
+        background: var(--background-secondary);
+        border-color: var(--border-color);
+    }
+
+    .chat-messages {
+        background: linear-gradient(to bottom, var(--background-primary) 0%, var(--background-secondary) 100%);
+    }
+
+    /* Message Bubbles Dark Mode */
+    .assistant-message .message-bubble {
+        background: var(--background-primary);
+        color: var(--text-primary);
+        border-color: var(--border-color);
+    }
+
+    .user-message .message-bubble {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
+        color: white;
+    }
+
+    /* Knowledge Indicators Dark Mode */
+    .knowledge-indicator {
+        background: rgba(59, 130, 246, 0.2);
+        border: 1px solid rgba(59, 130, 246, 0.3);
+        color: #93c5fd;
+    }
+
+    .official-info-header {
+        background: rgba(59, 130, 246, 0.2);
+        border-left: 4px solid var(--primary-color);
+        color: #93c5fd;
+    }
+
+    .source-attribution {
+        background: rgba(16, 185, 129, 0.2);
+        border-left: 4px solid var(--success-color);
+        color: #86efac;
+    }
+
+    .company-disclaimer,
+    .ai-disclaimer {
+        background: rgba(245, 158, 11, 0.2);
+        border: 1px solid rgba(245, 158, 11, 0.3);
+        color: #fcd34d;
+    }
+
+    /* Input Area Dark Mode */
+    .chat-input-container {
+        background: var(--background-secondary);
+        border-top-color: var(--border-color);
+    }
+
+    .input-group {
+        border-color: var(--border-color);
+    }
+
+    .input-group:focus-within {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1), var(--shadow-medium);
+    }
+
+    #message-input {
+        background: var(--background-primary);
+        color: var(--text-primary);
+        border-color: var(--border-color);
+    }
+
+    #message-input::placeholder {
+        color: var(--text-secondary);
+    }
+
+    /* Button Dark Mode */
+    .btn-outline-secondary {
+        color: var(--text-secondary);
+        border-color: var(--border-color);
+    }
+
+    .btn-outline-secondary:hover {
+        background: var(--background-primary);
+        color: var(--text-primary);
+        border-color: var(--text-secondary);
+    }
+
+    /* Code Blocks Dark Mode */
+    .message-bubble pre {
+        background: #0f172a;
+        border-color: var(--border-color);
+        color: var(--text-primary);
+    }
+
+    .user-message .message-bubble pre {
+        background: rgba(15, 23, 42, 0.8);
+        border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .message-bubble code {
+        background: rgba(15, 23, 42, 0.8);
+        color: #fbbf24;
+    }
+
+    .user-message .message-bubble code {
+        background: rgba(255, 255, 255, 0.2);
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    /* Toast Dark Mode */
+    .toast {
+        background: var(--background-secondary);
+        border-color: var(--border-color);
+    }
+
+    .toast-header {
+        background: rgba(30, 41, 59, 0.9);
+        border-bottom-color: var(--border-color);
+        color: var(--text-primary);
+    }
+
+    .toast-body {
+        background: var(--background-secondary);
+        color: var(--text-primary);
+    }
+
+    /* Dropdown Dark Mode */
+    .dropdown-menu {
+        background: var(--background-secondary);
+        border-color: var(--border-color);
+    }
+
+    .dropdown-item {
+        color: var(--text-primary);
+    }
+
+    .dropdown-item:hover {
+        background: var(--background-primary);
+        color: var(--text-primary);
+    }
+
+    .dropdown-item-text {
+        color: var(--text-secondary);
+    }
+
+    /* Mobile Menu Dark Mode */
+    .offcanvas {
+        background: var(--background-secondary);
+    }
+
+    .offcanvas-header {
+        background: var(--primary-color);
+    }
+
+    .offcanvas-body {
+        background: var(--background-secondary);
+    }
+
+    .mobile-status-card,
+    .mobile-info-compact {
+        background: var(--background-primary);
+        border-color: var(--border-color);
+    }
+
+    .mobile-menu-title {
+        color: var(--text-primary);
+    }
+
+    .mobile-status-text {
+        color: var(--text-secondary);
+    }
+
+    .mobile-menu-footer {
+        border-top-color: var(--border-color);
+    }
+
+    /* Scrollbar Dark Mode */
+    .chat-messages::-webkit-scrollbar-track {
+        background: var(--background-primary);
+    }
+
+    .chat-messages::-webkit-scrollbar-thumb {
+        background: var(--border-color);
+    }
+
+    .chat-messages::-webkit-scrollbar-thumb:hover {
+        background: var(--text-secondary);
+    }
+
+    /* Status Indicator Dark Mode - ensure visibility */
+    .status-dot.status-healthy {
+        background-color: var(--success-color) !important;
+        box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3);
+    }
+
+    .status-dot.status-warning {
+        background-color: var(--warning-color) !important;
+        box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.3);
+    }
+
+    .status-dot.status-error {
+        background-color: var(--error-color) !important;
+        box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.3);
+    }
+
+    /* Enhanced contrast for better readability */
+    .message-bubble strong {
+        color: var(--text-primary);
+        font-weight: 600;
+    }
+
+    .user-message .message-bubble strong {
+        color: white;
+    }
+
+    .message-bubble em {
+        color: var(--text-secondary);
+    }
+
+    .user-message .message-bubble em {
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    /* Links in dark mode */
+    .message-bubble a {
+        color: var(--accent-color);
+    }
+
+    .message-bubble a:hover {
+        color: var(--primary-color);
+    }
+
+    .user-message .message-bubble a {
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    .user-message .message-bubble a:hover {
+        color: white;
+    }
+}

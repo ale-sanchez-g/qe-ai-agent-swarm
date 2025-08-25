@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Chat Assistant - Login</title>
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -135,7 +136,7 @@
                 
                 <div class="form-floating">
                     <input type="text" class="form-control" id="user-id" placeholder="Enter your User ID" 
-                           required maxlength="50" pattern="[a-zA-Z0-9_-]+" 
+                           required maxlength="50" pattern="[a-zA-Z0-9_\-]+" 
                            title="Only letters, numbers, dashes, and underscores allowed">
                     <label for="user-id"><i class="bi bi-person me-2"></i>User ID</label>
                 </div>
