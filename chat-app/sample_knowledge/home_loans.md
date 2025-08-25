@@ -3,6 +3,9 @@
 ## Overview
 Our home loan products are designed to help customers achieve their homeownership dreams with competitive rates and flexible terms.
 
+## Website Citation
+https://devops1.com.au#home-loan-products
+
 ## Home Loan Types
 
 ### Fixed Rate Home Loans
