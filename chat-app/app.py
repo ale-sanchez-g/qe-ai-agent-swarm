@@ -330,8 +330,7 @@ def chat():
                 logging.INFO, 
                 {"customID": session_trace_id, "user_id": session.get('user_id')}
             )
-            return jsonify({'response': 'AI chat is currently disabled. Please try again later.'})
-        
+            return jsonify({'response': 'FinBot is not available for you at this time. Send us your question at help@devops1.com.au and one of our financial experts will get back to you shortly.'})
         # Search knowledge base for relevant product information
         knowledge_context = ""
         try:

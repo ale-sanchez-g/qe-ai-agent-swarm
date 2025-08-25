@@ -6,9 +6,9 @@
     <meta name="theme-color" content="#2563eb">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="AI Chat">
+    <meta name="apple-mobile-web-app-title" content="AI FinBot">
     <meta name="mobile-web-app-capable" content="yes">
-    <title>AI Chat Assistant - Professional Interface</title>
+    <title>AI FinBot</title>
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -26,7 +26,7 @@
                     <div class="d-flex align-items-center flex-grow-1 min-w-0">
                         <div class="flex-grow-1 min-w-0">
                             <div class="d-flex align-items-center gap-2 flex-wrap">
-                                <h4 class="mb-0 text-truncate">AI Chat Assistant</h4>
+                                <h4 class="mb-0 text-truncate">FinBot Chat Assistant</h4>
                                 {% if user_id %}
                                 <small class="text-muted">
                                     <span class="d-none d-sm-inline">Powered by LaunchDarkly & AWS Bedrock | </span>
@@ -97,15 +97,13 @@
                             </div>
                             <div class="message-content">
                                 <div class="message-bubble">
-                                    <p><strong>Welcome to your AI Assistant{% if user_id %}, {{ user_id }}{% endif %}!</strong></p>
-                                    <p>I'm here to help you with questions, analysis, coding assistance, and much more. I have access to your browser and platform information to provide a personalized experience.</p>
-                                    <p><em>Features:</em></p>
+                                    <p><strong>Welcome to your FinBot AI Assistant{% if user_id %}, {{ user_id }}{% endif %}!</strong></p>
+                                    <p>I'm here to help you with financial questions before connecting you with one of our Financial experts.</p>
+                                    <p><em>Topics:</em></p>
                                     <ul>
-                                        <li>Natural language processing</li>
-                                        <li>Code analysis and generation</li>
-                                        <li>Document analysis</li>
-                                        <li>Research assistance</li>
-                                        <li>Context-aware responses based on your platform</li>
+                                        <li>Loan Applications</li>
+                                        <li>Inheritance</li>
+                                        <li>Investments</li>
                                     </ul>
                                     <small class="message-time">System Ready</small>
                                 </div>
