@@ -380,14 +380,22 @@ def chat():
         # Separate system messages
         for msg in config_value.messages:
             if msg.role == 'system':
-                system_messages.append({'text': msg.content})
+                system_messages.append({'text': msg.content})       
         
-        # Log knowledge retrieval
-        observe.record_log(
-            f"Knowledge context retrieved: {knowledge_context}",
-            logging.INFO,
-            {"customID": session_trace_id, "user_id": session.get('user_id')}
-        )
+        if not knowledge_context:
+            # Log knowledge retrieval
+            observe.record_log(
+                f"Now Product knowledge found for the query",
+                logging.WARNING,
+                {"customID": session_trace_id, "user_id": session.get('user_id')}
+            )
+        else:               
+            # Log knowledge retrieval
+            observe.record_log(
+                f"Knowledge context retrieved: {knowledge_context}",
+                logging.INFO,
+                {"customID": session_trace_id, "user_id": session.get('user_id')}
+            )
 
         context_prompt = f"""You are a helpful and professional AI assistant specialising in financial services and loan products. 
 
