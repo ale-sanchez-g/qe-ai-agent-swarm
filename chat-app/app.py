@@ -382,10 +382,6 @@ def chat():
             if msg.role == 'system':
                 system_messages.append({'text': msg.content})
         
-        # Add enhanced system message with user context
-        # user_id = session.get('user_id', 'Unknown')
-        # browser_details = session.get('browser_details', {})
-
         # Log knowledge retrieval
         observe.record_log(
             f"Knowledge context retrieved: {knowledge_context}",
@@ -408,7 +404,7 @@ def chat():
         try:
             converse_params = {
                 'modelId': config_value.model.name,
-                'messages': messages
+                'messages': messages,
             }
             
             if system_messages:
@@ -420,7 +416,8 @@ def chat():
                 )
             else:
                 response = bedrock_client.converse(**converse_params)
-            
+
+
             ai_response = response['output']['message']['content'][0]['text']
             
             # Update chat history
