@@ -349,27 +349,53 @@ function setupProjectSummaryButton() {
             'Provide Project Summary',
             'Enter the Confluence project name or ID',
             function(projectID) {
-                const predefinedPrompt = `Analyze project ${projectID} from Confluence and provide a comprehensive summary. Please:
+                const predefinedPrompt = `
+                Analyze project ${projectID} from Confluence and provide a comprehensive summary. If you don't have direct access to any system or information, please explicitly state this limitation.
 
-                        1. List all discovered Confluence pages related to project ${projectID}
-                        [For each page found]:
-                        - URL:
-                        - Key content summary (focus on: objectives, scope, deliverables)
+                Please provide:
 
-                        2. Synthesize overall project objectives from all sources
-                        - Primary goal
-                        - Key success metrics
-                        - Major constraints/dependencies
+                1. Confluence Pages Analysis
+                - List any Confluence pages you can access related to project ${projectID} 
+                - For each page found:
+                * URL (if accessible)
+                * Key content summary
+                * Clearly mark any information that cannot be verified
+                - If no pages are accessible, explicitly state this
 
-                        3. Extract and analyze linked JIRA tickets
-                        - List ticket URLs
-                        - Status summary
-                        - Critical blockers/risks
+                2. Project Overview
+                - Confirmed objectives (with source attribution)
+                - Potential objectives (clearly marked as assumptions if not directly verified)
+                - Known metrics and constraints
+                - Clear distinction between verified facts and analytical assumptions
 
-                        Format output as:
-                        [Source Links]
-                        [Project Summary: 3-5 bullet points]
-                        [Key JIRA Insights]`;
+                3. JIRA Analysis
+                - List any accessible JIRA tickets
+                - If JIRA access is not available, explicitly state this limitation
+                - For any available tickets:
+                * URL
+                * Status
+                * Key blockers/risks
+
+                Format output as:
+                [Access Limitations Statement]
+                [Verified Information]
+                [Analytical Assumptions - clearly labeled]
+                [Recommendations for Additional Information Needed]
+
+                Please maintain clear separation between:
+                - Directly accessible information
+                - Reasonable assumptions
+                - Gaps in available data"
+
+                Key Improvements Made:
+                1. Added explicit request for transparency about access limitations
+                2. Created clear separation between verified and assumed information
+                3. Requested source attribution
+                4. Added structure for acknowledging information gaps
+                5. Included specific formatting for assumptions vs. facts
+                6. Added request for identifying additional information needed
+
+                This improved prompt should help prevent fabricated content while encouraging more transparent and accurate responses.`;
                 if (socket && socket.readyState === WebSocket.OPEN) {
                     socket.send(JSON.stringify({
                         action: "message",
