@@ -169,6 +169,7 @@ class ConnectionManager:
     def __init__(self):
         self.active_connections: List[WebSocket] = []
         self.connection_sessions: Dict[WebSocket, str] = {}
+        self.message_counts: Dict[str, int] = {}  # Track message count per session
 
     async def connect(self, websocket: WebSocket):
         """Accept a new WebSocket connection and assign a session ID."""
@@ -177,12 +178,16 @@ class ConnectionManager:
         # Create a unique session ID for this connection
         session_id = str(uuid.uuid4())
         self.connection_sessions[websocket] = session_id
+        self.message_counts[session_id] = 0  # Initialize message counter
 
     def disconnect(self, websocket: WebSocket):
         """Remove a WebSocket connection and clean up session data."""
         if websocket in self.active_connections:
             self.active_connections.remove(websocket)
         if websocket in self.connection_sessions:
+            session_id = self.connection_sessions[websocket]
+            # Optionally keep message count for session persistence
+            # Or remove it: del self.message_counts[session_id]
             del self.connection_sessions[websocket]
 
     async def send_personal_message(self, message: str, websocket: WebSocket):
@@ -197,6 +202,15 @@ class ConnectionManager:
     def get_session_id(self, websocket: WebSocket) -> str:
         """Get the session ID associated with a WebSocket connection."""
         return self.connection_sessions.get(websocket, str(uuid.uuid4()))
+
+    def increment_message_count(self, session_id: str) -> int:
+        """Increment and return the message count for a session"""
+        self.message_counts[session_id] = self.message_counts.get(session_id, 0) + 1
+        return self.message_counts[session_id]
+
+    def get_message_count(self, session_id: str) -> int:
+        """Get the current message count for a session"""
+        return self.message_counts.get(session_id, 0)
 
 # Global connection manager instance
 manager = ConnectionManager()
@@ -445,9 +459,17 @@ async def websocket_endpoint(websocket: WebSocket):
             if json_data["action"] == "message":
                 user_message = json_data["content"]
                 
+                # Increment message counter
+                message_count = manager.increment_message_count(session_id)
+                print(f"[DEBUG] Session {session_id}: Message #{message_count} received")
+                
                 # Echo user message back to client for UI consistency
                 await manager.send_personal_message(
-                    json.dumps({"type": "user", "content": user_message}),
+                    json.dumps({
+                        "type": "user", 
+                        "content": user_message,
+                        "message_count": message_count
+                    }),
                     websocket
                 )
                 
@@ -457,14 +479,22 @@ async def websocket_endpoint(websocket: WebSocket):
                     
                     # Send AI response back to client
                     await manager.send_personal_message(
-                        json.dumps({"type": "bot", "content": response}),
+                        json.dumps({
+                            "type": "bot", 
+                            "content": response,
+                            "message_count": message_count
+                        }),
                         websocket
                     )
                     
                 except Exception as e:
                     # Handle processing errors gracefully
                     await manager.send_personal_message(
-                        json.dumps({"type": "system", "content": f"Error processing message: {str(e)}"}),
+                        json.dumps({
+                            "type": "system", 
+                            "content": f"Error processing message: {str(e)}",
+                            "message_count": message_count
+                        }),
                         websocket
                     )
     
@@ -613,6 +643,25 @@ async def get_session_history(session_id: str):
             ]
         }
     return {"error": "Session not found"}
+
+@app.get("/memory/session/{session_id}/message_count", tags=["Memory Management"], summary="Get message count for session")
+async def get_session_message_count(session_id: str):
+    """Get the number of messages sent in a specific session."""
+    count = manager.get_message_count(session_id)
+    return {
+        "session_id": session_id,
+        "message_count": count
+    }
+
+@app.get("/memory/total_messages", tags=["Memory Management"], summary="Get total message count across all sessions")
+async def get_total_message_count():
+    """Get the total number of messages across all sessions."""
+    total = sum(manager.message_counts.values())
+    return {
+        "total_messages": total,
+        "active_sessions": len(manager.message_counts),
+        "session_counts": manager.message_counts
+    }
 
 @app.get("/memory/longterm/search", tags=["Memory Management"], summary="Search long-term memory (RAG index)")
 async def search_longterm(q: str = Query(..., min_length=2), k: int = 5):

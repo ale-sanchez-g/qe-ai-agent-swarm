@@ -16,7 +16,7 @@ logger:
   # For dynamic log filenames:
   path_settings:
     path_pattern: "logs/mcp-agent-{unique_id}.jsonl"
-    unique_id: "timestamp"  # Or "session_id"
+    unique_id: "session_id"  # Or "timestamp"
     timestamp_format: "%Y%m%d_%H%M%S"
 
 mcp:
