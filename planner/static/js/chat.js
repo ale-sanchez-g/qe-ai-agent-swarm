@@ -385,17 +385,8 @@ function setupProjectSummaryButton() {
                 Please maintain clear separation between:
                 - Directly accessible information
                 - Reasonable assumptions
-                - Gaps in available data"
-
-                Key Improvements Made:
-                1. Added explicit request for transparency about access limitations
-                2. Created clear separation between verified and assumed information
-                3. Requested source attribution
-                4. Added structure for acknowledging information gaps
-                5. Included specific formatting for assumptions vs. facts
-                6. Added request for identifying additional information needed
-
-                This improved prompt should help prevent fabricated content while encouraging more transparent and accurate responses.`;
+                - Gaps in available data
+                `;
                 if (socket && socket.readyState === WebSocket.OPEN) {
                     socket.send(JSON.stringify({
                         action: "message",
