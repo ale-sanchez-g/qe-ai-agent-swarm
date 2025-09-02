@@ -137,8 +137,10 @@ export class ChatPage extends BasePage {
    * Clear chat history
    */
   async clearChatHistory(): Promise<void> {
-    await this.handleDialog('accept');
+    // Set up dialog handler before clicking
+    const dialogHandler = this.handleDialog('accept');
     await this.clickElement(this.clearChatButton);
+    await dialogHandler; // Wait for dialog to be handled
     await this.waitForNavigation();
   }
 
@@ -167,8 +169,10 @@ export class ChatPage extends BasePage {
    */
   async logout(): Promise<void> {
     await this.openSettingsDropdown();
-    await this.handleDialog('accept');
+    // Set up dialog handler before clicking logout
+    const dialogHandler = this.handleDialog('accept');
     await this.clickElement(this.logoutButton);
+    await dialogHandler; // Wait for dialog to be handled
     await this.waitForNavigation();
   }
 

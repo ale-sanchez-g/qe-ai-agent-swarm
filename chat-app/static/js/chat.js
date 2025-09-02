@@ -111,7 +111,7 @@ class ChatApp {
             if (response.ok) {
                 // Add AI response to chat with formatting
                 this.addMessage(data.response, 'assistant');
-                this.showToast('Response received successfully', 'success');
+                // this.showToast('Response received successfully', 'success');
             } else {
                 // Handle authentication errors
                 if (response.status === 401) {
@@ -338,7 +338,7 @@ ${data.launchdarkly_connected ? '✅' : '❌'} LaunchDarkly: ${data.launchdarkly
 🕒 Last Check: ${new Date(data.timestamp).toLocaleString()}
                 `.trim();
                 
-                this.showToast(statusMessage, isHealthy ? 'success' : 'warning');
+                // this.showToast(statusMessage, isHealthy ? 'success' : 'warning');
             } else {
                 this.updateStatusIndicator('error');
                 this.showToast('Health check failed - Unable to reach server', 'error');

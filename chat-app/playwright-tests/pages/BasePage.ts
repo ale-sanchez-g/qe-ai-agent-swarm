@@ -69,12 +69,24 @@ export class BasePage {
    * Handle dialog (alert, confirm, prompt)
    */
   async handleDialog(action: 'accept' | 'dismiss', promptText?: string): Promise<void> {
-    this.page.on('dialog', async dialog => {
-      if (action === 'accept') {
-        await dialog.accept(promptText);
-      } else {
-        await dialog.dismiss();
-      }
+    // Set up a one-time dialog handler
+    const dialogPromise = this.page.waitForEvent('dialog');
+    
+    // Return a promise that resolves when dialog is handled
+    return new Promise((resolve) => {
+      this.page.once('dialog', async dialog => {
+        try {
+          if (action === 'accept') {
+            await dialog.accept(promptText);
+          } else {
+            await dialog.dismiss();
+          }
+        } catch (error) {
+          console.log('Dialog already handled:', error);
+        } finally {
+          resolve();
+        }
+      });
     });
   }
 
