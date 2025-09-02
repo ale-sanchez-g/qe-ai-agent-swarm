@@ -35,8 +35,13 @@ class ChatApp {
             }
         });
 
-        this.clearChatButton.addEventListener('click', () => this.clearChat());
-        this.healthCheckButton.addEventListener('click', () => this.checkHealth());
+        if (this.clearChatButton) {
+            this.clearChatButton.addEventListener('click', () => this.clearChat());
+        }
+        
+        if (this.healthCheckButton) {
+            this.healthCheckButton.addEventListener('click', () => this.checkHealth());
+        }
         
         // Debug config button might not exist if feature flag is disabled
         if (this.debugConfigButton) {

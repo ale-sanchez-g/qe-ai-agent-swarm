@@ -10,6 +10,10 @@ A web-based chat application with LaunchDarkly feature management, AI configurat
   - Dynamic AI model configuration
   - Real-time observability and metrics
 - **AWS Bedrock Connection**: Support for various LLM models through AWS Bedrock
+- **Knowledge Base Management**: Upload and manage AI assistant knowledge content (admin access required)
+- **Feature Flag Access Control**: 
+  - `show-debug-config`: Controls visibility of debug configuration features
+  - `admin-knowledge-base`: Controls access to knowledge base management page
 - **Session Management**: Maintains chat history during user sessions
 - **Responsive Design**: Works on desktop and mobile devices
 
@@ -56,6 +60,34 @@ The application expects an AI Config with the key `chat-ai-config` in your Launc
 ### AWS Credentials
 
 Ensure your AWS credentials are properly configured and have access to Amazon Bedrock. The application will test credentials on startup.
+
+### Feature Flags
+
+The application uses LaunchDarkly feature flags to control access to various features:
+
+#### `show-debug-config` (Boolean)
+- **Purpose**: Controls visibility of debug configuration features
+- **Default**: `false` (debug features hidden)
+- **When enabled**: Shows debug buttons in settings menu for troubleshooting
+- **Documentation**: See `DEBUG_FEATURE_FLAG.md`
+
+#### `admin-knowledge-base` (Boolean)  
+- **Purpose**: Controls access to knowledge base management page
+- **Default**: `false` (knowledge admin restricted)
+- **When enabled**: Shows "Knowledge Base Admin" links and grants access to `/admin/knowledge`
+- **Security**: Unauthorized access attempts are logged
+- **Documentation**: See `ADMIN_KNOWLEDGE_BASE_FEATURE_FLAG.md`
+
+**Targeting Examples**:
+```javascript
+// Admin users only
+IF user.key in ["admin", "knowledge-manager"]
+THEN serve true
+
+// Role-based access  
+IF user.role = "admin" OR user.team = "ai-operations"
+THEN serve true
+```
 
 ## Usage
 

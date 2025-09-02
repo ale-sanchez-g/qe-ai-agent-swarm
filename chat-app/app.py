@@ -36,6 +36,7 @@ AI_CONFIG_KEY = os.getenv('LAUNCHDARKLY_AI_CONFIG_KEY', 'chat-ai-config')
 
 # Feature flags used in this application:
 # - show-debug-config: Boolean flag to control visibility of debug configuration button
+# - admin-knowledge-base: Boolean flag to control access to knowledge base management page
 
 # Global variables
 bedrock_client = None
@@ -147,21 +148,25 @@ def get_feature_flags():
     
     if not context or not ldclient.get().is_initialized():
         return {
-            'show_debug_config': False  # Default to hiding debug config
+            'show_debug_config': False,  # Default to hiding debug config
+            'admin_knowledge_base': False  # Default to hiding knowledge base admin
         }
     
     try:
         # Evaluate feature flags
         show_debug_config = ldclient.get().variation('show-debug-config', context, False)
+        admin_knowledge_base = ldclient.get().variation('admin-knowledge-base', context, False)
         
         return {
-            'show_debug_config': show_debug_config
+            'show_debug_config': show_debug_config,
+            'admin_knowledge_base': admin_knowledge_base
         }
     except Exception as e:
         print(f"❌ Error evaluating feature flags: {e}")
         observe.record_log(f"Error evaluating feature flags: {e}", logging.ERROR)
         return {
-            'show_debug_config': False  # Default to hiding debug config on error
+            'show_debug_config': False,  # Default to hiding debug config on error
+            'admin_knowledge_base': False  # Default to hiding knowledge base admin on error
         }
 
 def get_ai_config(user_message):
@@ -501,8 +506,40 @@ def knowledge_admin():
     if 'authenticated' not in session or not session['authenticated']:
         return render_template('login.html')
     
+    # Get feature flags for the current user
+    feature_flags = get_feature_flags()
+    
+    # Check if user has access to knowledge base management
+    if not feature_flags.get('admin_knowledge_base', False):
+        # Log unauthorized access attempt
+        observe.record_log(
+            f"Unauthorized access attempt to knowledge admin by user: {session.get('user_id', 'Unknown')}", 
+            logging.WARNING, 
+            {
+                "user_id": session.get('user_id'),
+                "feature_flag": "admin-knowledge-base",
+                "flag_value": False
+            }
+        )
+        return render_template('index.html', 
+                             user_id=session.get('user_id', 'Unknown'),
+                             feature_flags=feature_flags,
+                             error_message="Access denied: You don't have permission to access the knowledge base management.")
+    
+    # Log successful access
+    observe.record_log(
+        f"Knowledge admin access granted to user: {session.get('user_id', 'Unknown')}", 
+        logging.INFO, 
+        {
+            "user_id": session.get('user_id'),
+            "feature_flag": "admin-knowledge-base",
+            "flag_value": True
+        }
+    )
+    
     return render_template('knowledge_admin.html', 
-                         user_id=session.get('user_id', 'Unknown'))
+                         user_id=session.get('user_id', 'Unknown'),
+                         feature_flags=feature_flags)
 
 @app.route('/api/debug', methods=['GET'])
 def debug_config():
