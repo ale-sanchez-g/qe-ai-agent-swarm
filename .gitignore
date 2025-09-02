@@ -186,3 +186,6 @@ logs/
 *-mcp/
 
 chat-app/knowledge_base/
+chat-app/playwright-tests/node_modules/
+chat-app/playwright-tests/test-results/
+chat-app/playwright-tests/playwright-report/
