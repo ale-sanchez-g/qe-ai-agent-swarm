@@ -6,7 +6,7 @@ export class TestData {
   // Valid test users
   static readonly VALID_USERS = {
     STANDARD: 'testuser123',
-    ADMIN: 'admin_user',
+    ADMIN: 'admin',
     LONG_NAME: 'verylongusernamethatisvalid',
     WITH_NUMBERS: 'user123test',
     WITH_UNDERSCORES: 'test_user_name',
