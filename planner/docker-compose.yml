@@ -1,0 +1,79 @@
+# Docker Compose configuration for MCP Planner Chat UI
+version: '3.8'
+
+services:
+  planner-chat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      tags:
+        - "planner-chat-ui:latest"
+    image: planner-chat-ui:${BUILD_TAG:-latest}
+    container_name: planner-chat-ui
+    ports:
+      - "8000:8000"
+    environment:
+      # Application settings
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+      
+      # API Keys (to be set in .env file or passed via environment)
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - LAUNCHDARKLY_SDK_KEY=${LAUNCHDARKLY_SDK_KEY}
+      
+      # Optional Dynatrace settings
+      - DYNATRACE_ENDPOINT=${DYNATRACE_ENDPOINT:-}
+      - DYNATRACE_API_TOKEN=${DYNATRACE_API_TOKEN:-}
+      
+    volumes:
+      # Persist conversation data and outputs
+      - ./output:/app/output
+      - ./logs:/app/logs
+      - ./memory:/app/memory
+      - ./memory_index:/app/memory_index
+      
+      # Mount RAG knowledge base
+      - ./rag:/app/rag
+      
+      # Mount configuration files (read-only for security)
+      - ./mcp_agent.config.yaml:/app/mcp_agent.config.yaml:ro
+      - ./mcp_agent.secrets.yaml:/app/mcp_agent.secrets.yaml:ro
+      
+    restart: unless-stopped
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    
+    # Resource limits (adjust based on your needs)
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+
+  # Optional: Redis for enhanced session management (uncomment if needed)
+  redis:
+    image: redis:7-alpine
+    container_name: planner-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+
+# Optional: Volume for Redis data persistence
+volumes:
+  redis_data:
+
+networks:
+  default:
+    name: planner-network
