@@ -1,0 +1,924 @@
+{
+    "version": 21,
+    "variables": [],
+    "tiles": {
+        "0": {
+            "title": "",
+            "type": "data",
+            "query": "fetch logs\n| filter data.data.type == \"message\"\n| sort timestamp desc\n| fieldsAdd \n    time = formatTimestamp(timestamp, format:\"MMM dd, HH:mm:ss\"),\n    role_icon = if(data.data.role == \"user\", \"👤\", \n                else: if(data.data.role == \"assistant\", \"🤖\", else: \"⚙️\"))      \n| fields \n    time,\n    role = data.data.role,\n    model = data.data.model,\n    request_id = data.data._request_id,\n    content = data.data.content,\n    stop_reason = coalesce(data.data.stop_reason, \"N/A\"),\n    event_type = event.type\n| limit 50\n",
+            "visualization": "recordView",
+            "visualizationSettings": {
+                "autoSelectVisualization": false,
+                "thresholds": []
+            },
+            "querySettings": {
+                "maxResultRecords": 1000,
+                "defaultScanLimitGbytes": 500,
+                "maxResultMegaBytes": 1,
+                "defaultSamplingRatio": 10,
+                "enableSampling": false
+            },
+            "davis": {
+                "enabled": false,
+                "davisVisualization": {
+                    "isAvailable": true
+                }
+            }
+        },
+        "1": {
+            "title": "sumInputTokens",
+            "type": "data",
+            "query": "fetch logs\n| filter data.data.type == \"message\" and isNotNull(data.data.model)\n| summarize sumInputTokens = sum(toLong(data.data.usage.input_tokens)), by: {data.data.model}",
+            "visualization": "singleValue",
+            "visualizationSettings": {
+                "singleValue": {
+                    "labelMode": "none",
+                    "label": "sum(Input)"
+                },
+                "autoSelectVisualization": false,
+                "thresholds": []
+            },
+            "querySettings": {
+                "maxResultRecords": 1000,
+                "defaultScanLimitGbytes": 500,
+                "maxResultMegaBytes": 1,
+                "defaultSamplingRatio": 10,
+                "enableSampling": false
+            },
+            "davis": {
+                "enabled": false,
+                "davisVisualization": {
+                    "isAvailable": true
+                }
+            }
+        },
+        "3": {
+            "title": "sumOutputTokens",
+            "type": "data",
+            "query": "fetch logs\n| filter data.data.type == \"message\"\n| summarize sumOutputTokens = sum(toLong(data.data.usage.output_tokens)), by: {data.data.model}",
+            "visualization": "singleValue",
+            "visualizationSettings": {
+                "singleValue": {
+                    "labelMode": "none"
+                },
+                "autoSelectVisualization": false,
+                "thresholds": []
+            },
+            "querySettings": {
+                "maxResultRecords": 1000,
+                "defaultScanLimitGbytes": 500,
+                "maxResultMegaBytes": 1,
+                "defaultSamplingRatio": 10,
+                "enableSampling": false
+            },
+            "davis": {
+                "enabled": false,
+                "davisVisualization": {
+                    "isAvailable": true
+                }
+            }
+        },
+        "4": {
+            "title": "",
+            "type": "data",
+            "query": "fetch logs\n| filter data.data.type == \"message\" and isNotNull(data.data.model)\n| summarize USD = (sum(toLong(data.data.usage.input_tokens)) / 1000000 * 0.80) + (sum(toLong(data.data.usage.output_tokens)) / 1000000 * 4.00)",
+            "visualization": "singleValue",
+            "visualizationSettings": {
+                "singleValue": {
+                    "label": "TOTAL COST $USD",
+                    "isIconVisible": true,
+                    "prefixIcon": "AssetIcon"
+                },
+                "autoSelectVisualization": false,
+                "thresholds": []
+            },
+            "querySettings": {
+                "maxResultRecords": 1000,
+                "defaultScanLimitGbytes": 500,
+                "maxResultMegaBytes": 1,
+                "defaultSamplingRatio": 10,
+                "enableSampling": false
+            },
+            "davis": {
+                "enabled": false,
+                "davisVisualization": {
+                    "isAvailable": true
+                }
+            }
+        },
+        "6": {
+            "type": "markdown",
+            "content": "![](https://dt-cdn.net/hub/e726b64e-299e-4bce-99f9-64346b888776.png)"
+        },
+        "7": {
+            "type": "markdown",
+            "content": "### AI Observability - Understanding and governing your AI\n\nAs AI systems become integral to business operations across Australia, organisations face increasing challenges in understanding and governing these complex technologies. AI Observability provides essential visibility into model behaviour, performance metrics, and decision-making processes that would otherwise remain opaque. Without proper monitoring, businesses risk operational failures, compliance issues, escalating costs, and difficulty troubleshooting when AI systems produce unexpected results. By implementing comprehensive observability practices, organisations can ensure their AI investments deliver reliable, transparent, and cost-effective outcomes whilst meeting regulatory requirements and maintaining stakeholder trust.\n\n[Get started in minutes! Check out how to ingest data.](https://docs.dynatrace.com/docs/shortlink/ai-ml-get-started)"
+        },
+        "8": {
+            "title": "",
+            "type": "data",
+            "query": "fetch logs\n| filter isNotNull(data.data.model)\n| summarize \n    {inputTokensPerTrace   = sum(coalesce(toLong(data.data.usage.input_tokens), 0)),\n    outputTokensPerTrace  = sum(coalesce(toLong(data.data.usage.output_tokens), 0)),\n    maxChatTurnPerTrace   = max(coalesce(toLong(data.data.chat_turn), 0))}\n  , by: { trace_id }\n| fieldsAdd\n    costPerTraceUSD = (inputTokensPerTrace  / 1000000.0) * 0.80\n                  + (outputTokensPerTrace / 1000000.0) * 4.00\n| filter maxChatTurnPerTrace >= 0\n| summarize avgCostPerChatTurn = round(avg(costPerTraceUSD / maxChatTurnPerTrace), decimals: 4)\n| fieldsKeep avgCostPerChatTurn",
+            "visualization": "singleValue",
+            "visualizationSettings": {
+                "singleValue": {
+                    "label": "$USD avg Turn Cost",
+                    "isIconVisible": true
+                },
+                "autoSelectVisualization": false,
+                "thresholds": [
+                    {
+                        "id": 1,
+                        "field": "avgCostPerChatTurn",
+                        "title": "",
+                        "isEnabled": true,
+                        "rules": [
+                            {
+                                "id": 0,
+                                "color": {
+                                    "Default": "var(--dt-colors-charts-status-ideal-default, #2f6862)"
+                                },
+                                "comparator": "≥",
+                                "label": "",
+                                "value": 0.03
+                            },
+                            {
+                                "id": 1,
+                                "color": {
+                                    "Default": "var(--dt-colors-charts-status-warning-default, #eea53c)"
+                                },
+                                "comparator": "≥",
+                                "label": "",
+                                "value": 0.04
+                            },
+                            {
+                                "id": 2,
+                                "color": {
+                                    "Default": "var(--dt-colors-charts-status-critical-default, #c62239)"
+                                },
+                                "comparator": "≥",
+                                "label": "",
+                                "value": 0.05
+                            }
+                        ]
+                    }
+                ]
+            },
+            "querySettings": {
+                "maxResultRecords": 1000,
+                "defaultScanLimitGbytes": 500,
+                "maxResultMegaBytes": 1,
+                "defaultSamplingRatio": 10,
+                "enableSampling": false
+            },
+            "davis": {
+                "enabled": false,
+                "davisVisualization": {
+                    "isAvailable": true
+                }
+            }
+        },
+        "9": {
+            "title": "",
+            "description": "",
+            "type": "data",
+            "query": "fetch logs\n| filter data.data.type == \"message\" and isNotNull(data.data.model) and isNull(trace_id)\n| summarize \n    {inputTokensPerTrace   = sum(coalesce(toLong(data.data.usage.input_tokens), 0)),\n    outputTokensPerTrace  = sum(coalesce(toLong(data.data.usage.output_tokens), 0)),\n    maxChatTurnPerTrace   = max(coalesce(toLong(data.data.chat_turn), 0))}\n  , by: { trace_id }\n| fieldsAdd\n    costPerTraceUSD = (inputTokensPerTrace  / 1000000.0) * 0.80\n                  + (outputTokensPerTrace / 1000000.0) * 4.00\n| summarize\n    {totalCostUSD      = round(sum(costPerTraceUSD), decimals: 2),\n    maxChatTurn       = max(maxChatTurnPerTrace)}, by: { trace_id }",
+            "visualization": "singleValue",
+            "visualizationSettings": {
+                "singleValue": {
+                    "label": "Untrace Cost"
+                },
+                "autoSelectVisualization": false,
+                "thresholds": [
+                    {
+                        "id": 1,
+                        "field": "totalCostUSD",
+                        "title": "",
+                        "isEnabled": true,
+                        "rules": [
+                            {
+                                "id": 0,
+                                "color": {
+                                    "Default": "var(--dt-colors-charts-status-ideal-default, #2f6862)"
+                                },
+                                "comparator": "≤",
+                                "label": "",
+                                "value": 0.05
+                            },
+                            {
+                                "id": 1,
+                                "color": {
+                                    "Default": "var(--dt-colors-charts-status-warning-default, #eea53c)"
+                                },
+                                "comparator": "≤",
+                                "label": "",
+                                "value": 0.19
+                            },
+                            {
+                                "id": 2,
+                                "color": {
+                                    "Default": "var(--dt-colors-charts-status-critical-default, #c62239)"
+                                },
+                                "comparator": "≥",
+                                "label": "",
+                                "value": 0.2
+                            }
+                        ]
+                    }
+                ]
+            },
+            "querySettings": {
+                "maxResultRecords": 1000,
+                "defaultScanLimitGbytes": 500,
+                "maxResultMegaBytes": 1,
+                "defaultSamplingRatio": 10,
+                "enableSampling": false
+            },
+            "davis": {
+                "enabled": false,
+                "davisVisualization": {
+                    "isAvailable": true
+                }
+            }
+        },
+        "10": {
+            "title": "",
+            "type": "data",
+            "query": "fetch logs\n| filter data.data.type == \"message\" and isNotNull(data.data.model) and isNotNull(trace_id)\n| summarize \n    {inputTokensPerTrace   = sum(coalesce(toLong(data.data.usage.input_tokens), 0)),\n    outputTokensPerTrace  = sum(coalesce(toLong(data.data.usage.output_tokens), 0))}\n  , by: { trace_id }\n| fieldsAdd\n    costPerTraceUSD = (inputTokensPerTrace  / 1000000.0) * 0.80\n                  + (outputTokensPerTrace / 1000000.0) * 4.00\n| summarize\n    {totalInputTokens  = sum(inputTokensPerTrace),\n    totalOutputTokens = sum(outputTokensPerTrace),\n    totalCostUSD      = round(sum(costPerTraceUSD), decimals: 2)}, by: { trace_id}\n| lookup [fetch logs | filter isNotNull(data.data.model) and isNotNull(data.data.chat_turn)], sourceField:trace_id, lookupField:trace_id\n\n| fieldsKeep trace_id, totalInputTokens, totalOutputTokens, totalCostUSD, lookup.data.data.chat_turn, lookup.data.data.model\n| sort lookup.data.data.chat_turn desc",
+            "visualization": "table",
+            "visualizationSettings": {
+                "table": {
+                    "columnOrder": [
+                        "[\"trace_id\"]",
+                        "[\"totalCostUSD\"]",
+                        "[\"lookup.data.data.chat_turn\"]",
+                        "[\"lookup.data.data.model\"]",
+                        "[\"totalInputTokens\"]",
+                        "[\"totalOutputTokens\"]"
+                    ],
+                    "columnTypeOverrides": [
+                        {
+                            "fields": [
+                                "content"
+                            ],
+                            "id": 1755690711721,
+                            "value": "log-content"
+                        }
+                    ],
+                    "sortBy": [
+                        {
+                            "columnId": "[\"totalCostUSD\"]",
+                            "direction": "descending"
+                        }
+                    ],
+                    "columnWidths": {
+                        "[\"totalInputTokens\"]": 121.99
+                    }
+                },
+                "autoSelectVisualization": true,
+                "thresholds": [
+                    {
+                        "id": 1,
+                        "field": "totalCostUSD",
+                        "title": "",
+                        "isEnabled": true,
+                        "rules": [
+                            {
+                                "id": 0,
+                                "color": {
+                                    "Default": "var(--dt-colors-charts-status-ideal-default, #2f6862)"
+                                },
+                                "comparator": "≤",
+                                "label": "",
+                                "value": 0.05
+                            },
+                            {
+                                "id": 1,
+                                "color": {
+                                    "Default": "var(--dt-colors-charts-status-warning-default, #eea53c)"
+                                },
+                                "comparator": "≤",
+                                "label": "",
+                                "value": 0.19
+                            },
+                            {
+                                "id": 2,
+                                "color": {
+                                    "Default": "var(--dt-colors-charts-status-critical-default, #c62239)"
+                                },
+                                "comparator": "≥",
+                                "label": "",
+                                "value": 0.2
+                            }
+                        ]
+                    }
+                ]
+            },
+            "querySettings": {
+                "maxResultRecords": 1000,
+                "defaultScanLimitGbytes": 500,
+                "maxResultMegaBytes": 2,
+                "defaultSamplingRatio": 10,
+                "enableSampling": false
+            },
+            "davis": {
+                "enabled": false,
+                "davisVisualization": {
+                    "isAvailable": true
+                }
+            }
+        },
+        "11": {
+            "title": "Tool Calls by Tool",
+            "type": "data",
+            "query": "fetch logs\n| filter namespace == \"mcp_agent.mcp.mcp_aggregator.ChatAgent\" and message == \"Requesting tool call\"\n| summarize tool_calls = count(), by:{data.data.tool_name, data.data.server_name}\n| sort tool_calls desc",
+            "visualization": "table",
+            "visualizationSettings": {
+                "table": {
+                    "columnOrder": [
+                        "[\"data.data.tool_name\"]",
+                        "[\"data.data.server_name\"]",
+                        "[\"tool_calls\"]"
+                    ]
+                },
+                "autoSelectVisualization": true,
+                "thresholds": []
+            },
+            "querySettings": {
+                "maxResultRecords": 1000,
+                "defaultScanLimitGbytes": 500,
+                "maxResultMegaBytes": 1,
+                "defaultSamplingRatio": 10,
+                "enableSampling": false
+            },
+            "davis": {
+                "enabled": false,
+                "davisVisualization": {
+                    "isAvailable": true
+                }
+            }
+        },
+        "12": {
+            "title": "Tool Call Errors",
+            "type": "data",
+            "query": "fetch logs\n| filter namespace == \"mcp_agent.mcp.mcp_agent_client_session\" and message == \"send_request: response=\" and data.data.isError == true\n| fields timestamp, message, data.data\n| sort timestamp desc\n| limit 50",
+            "visualization": "recordView",
+            "visualizationSettings": {
+                "autoSelectVisualization": false,
+                "thresholds": []
+            },
+            "querySettings": {
+                "maxResultRecords": 1000,
+                "defaultScanLimitGbytes": 500,
+                "maxResultMegaBytes": 2,
+                "defaultSamplingRatio": 10,
+                "enableSampling": false
+            },
+            "davis": {
+                "enabled": false,
+                "davisVisualization": {
+                    "isAvailable": true
+                }
+            }
+        },
+        "13": {
+            "title": "Tool Connections",
+            "type": "data",
+            "query": "fetch logs\n| filter namespace == \"mcp_agent.mcp.mcp_connection_manager\"\n| filter matchesPhrase(message, \"Up and running\") or matchesPhrase(message, \"Requesting shutdown\") or matchesPhrase(message, \"Error\")\n| fieldsAdd server_name = substring(message, from: 0, to: indexOf(message, \":\"))\n| fieldsAdd event = if(matchesPhrase(message, \"Up and running\"), \"connected\",\n                  else: if(matchesPhrase(message, \"Requesting shutdown\"), \"shutdown\",\n                  else: if(matchesPhrase(message, \"Error\"), \"error\", else: \"other\")))\n| summarize count = count(), by:{server_name, event}\n| sort server_name asc, event asc",
+            "visualization": "table",
+            "visualizationSettings": {
+                "table": {
+                    "columnOrder": [
+                        "[\"server_name\"]",
+                        "[\"event\"]",
+                        "[\"count\"]"
+                    ]
+                },
+                "autoSelectVisualization": true,
+                "thresholds": []
+            },
+            "querySettings": {
+                "maxResultRecords": 1000,
+                "defaultScanLimitGbytes": 500,
+                "maxResultMegaBytes": 1,
+                "defaultSamplingRatio": 10,
+                "enableSampling": false
+            },
+            "davis": {
+                "enabled": false,
+                "davisVisualization": {
+                    "isAvailable": true
+                }
+            }
+        },
+        "14": {
+            "title": "Session Trail",
+            "type": "data",
+            "query": "fetch logs\n| filter matchesPhrase(message, \"[DEBUG] Session \") and matchesPhrase(message, \"Message #\")\n| fieldsAdd session_start = indexOf(message, \"Session \") + 8\n| fieldsAdd session_end = indexOf(message, \": Message #\")\n| fieldsAdd session_id = substring(message, from: session_start, to: session_end)\n| fieldsAdd count_start = indexOf(message, \"Message #\") + 9\n| fieldsAdd count_end = indexOf(message, \" received\")\n| fieldsAdd message_count = toLong(substring(message, from: count_start, to: count_end))\n| summarize last_message = max(timestamp), max_message_count = max(message_count), by:{session_id}\n| sort last_message desc\n| limit 100",
+            "visualization": "table",
+            "visualizationSettings": {
+                "table": {
+                    "columnOrder": [
+                        "[\"session_id\"]",
+                        "[\"max_message_count\"]",
+                        "[\"last_message\"]"
+                    ]
+                },
+                "autoSelectVisualization": true,
+                "thresholds": []
+            },
+            "querySettings": {
+                "maxResultRecords": 1000,
+                "defaultScanLimitGbytes": 500,
+                "maxResultMegaBytes": 1,
+                "defaultSamplingRatio": 10,
+                "enableSampling": false
+            },
+            "davis": {
+                "enabled": false,
+                "davisVisualization": {
+                    "isAvailable": true
+                }
+            }
+        },
+        "15": {
+            "title": "MCP Tool Status & Token Health",
+            "type": "data",
+            "query": "fetch logs\n| filter matchesPhrase(namespace, \"mcp_agent\") and matchesPhrase(message, \"tool\")\n| summarize tool_calls = count(), errors = countIf(matchesPhrase(message, \"error\")), by:{namespace}\n| sort tool_calls desc",
+            "visualization": "table",
+            "visualizationSettings": {
+                "table": {
+                    "columnOrder": [
+                        "[\"data.data.tool_name\"]",
+                        "[\"data.data.server_name\"]",
+                        "[\"tool_metrics.total_calls\"]",
+                        "[\"tool_metrics.error_calls\"]",
+                        "[\"tool_metrics.token_errors\"]",
+                        "[\"success_rate\"]"
+                    ]
+                },
+                "autoSelectVisualization": true,
+                "thresholds": [
+                    {
+                        "id": 1,
+                        "field": "success_rate",
+                        "title": "Success Rate %",
+                        "isEnabled": true,
+                        "rules": [
+                            {
+                                "id": 0,
+                                "color": {"Default": "var(--dt-colors-charts-status-ideal-default, #2f6862)"},
+                                "comparator": "≥",
+                                "value": 99
+                            },
+                            {
+                                "id": 1,
+                                "color": {"Default": "var(--dt-colors-charts-status-warning-default, #eea53c)"},
+                                "comparator": "≥",
+                                "value": 95
+                            },
+                            {
+                                "id": 2,
+                                "color": {"Default": "var(--dt-colors-charts-status-critical-default, #c62239)"},
+                                "comparator": "<",
+                                "value": 95
+                            }
+                        ]
+                    }
+                ]
+            },
+            "querySettings": {
+                "maxResultRecords": 1000,
+                "defaultScanLimitGbytes": 500,
+                "maxResultMegaBytes": 1,
+                "defaultSamplingRatio": 10,
+                "enableSampling": false
+            },
+            "davis": {"enabled": false, "davisVisualization": {"isAvailable": true}}
+        },
+        "16": {
+            "title": "Conversation Quality Metrics",
+            "type": "data",
+            "query": "fetch logs\n| filter data.data.type == \"message\"\n| summarize total_messages = count(), error_messages = countIf(data.data.stop_reason == \"error\"), user_messages = countIf(data.data.role == \"user\"), assistant_messages = countIf(data.data.role == \"assistant\")\n| fieldsAdd success_rate_pct = round(((total_messages - error_messages) / total_messages) * 100, decimals: 2)\n| fieldsAdd avg_turn_ratio = round(assistant_messages / (user_messages + 0.0001), decimals: 2)",
+            "visualization": "table",
+            "visualizationSettings": {
+                "table": {
+                    "columnOrder": [
+                        "[\"total_messages\"]",
+                        "[\"user_messages\"]",
+                        "[\"assistant_messages\"]",
+                        "[\"error_messages\"]",
+                        "[\"success_rate_pct\"]",
+                        "[\"avg_turn_ratio\"]"
+                    ]
+                },
+                "autoSelectVisualization": true,
+                "thresholds": [
+                    {
+                        "id": 1,
+                        "field": "success_rate_pct",
+                        "title": "Success Rate %",
+                        "isEnabled": true,
+                        "rules": [
+                            {
+                                "id": 0,
+                                "color": {"Default": "#2f6862"},
+                                "comparator": "≥",
+                                "value": 98
+                            },
+                            {
+                                "id": 1,
+                                "color": {"Default": "#eea53c"},
+                                "comparator": "≥",
+                                "value": 95
+                            },
+                            {
+                                "id": 2,
+                                "color": {"Default": "#c62239"},
+                                "comparator": "<",
+                                "value": 95
+                            }
+                        ]
+                    }
+                ]
+            },
+            "querySettings": {
+                "maxResultRecords": 100,
+                "defaultScanLimitGbytes": 500,
+                "maxResultMegaBytes": 1,
+                "defaultSamplingRatio": 10,
+                "enableSampling": false
+            },
+            "davis": {"enabled": false, "davisVisualization": {"isAvailable": true}}
+        },
+        "17": {
+            "title": "SLI: Error Rate (Target: <1%)",
+            "type": "data",
+            "query": "fetch logs\n| filter data.data.type == \"message\"\n| summarize total = count(), errors = countIf(data.data.stop_reason == \"error\")\n| fieldsAdd error_rate_pct = round((errors / total) * 100, decimals: 2)\n| fieldsAdd sli_status = if(error_rate_pct <= 1.0, \"✅ PASS\", else: \"❌ FAIL\")",
+            "visualization": "singleValue",
+            "visualizationSettings": {
+                "singleValue": {
+                    "label": "Error Rate %",
+                    "isIconVisible": true,
+                    "prefixIcon": "AlertCircle"
+                },
+                "autoSelectVisualization": false,
+                "thresholds": [
+                    {
+                        "id": 1,
+                        "field": "error_rate_pct",
+                        "isEnabled": true,
+                        "rules": [
+                            {
+                                "id": 0,
+                                "color": {"Default": "#2f6862"},
+                                "comparator": "≤",
+                                "value": 1.0
+                            },
+                            {
+                                "id": 1,
+                                "color": {"Default": "#c62239"},
+                                "comparator": ">",
+                                "value": 1.0
+                            }
+                        ]
+                    }
+                ]
+            },
+            "querySettings": {
+                "maxResultRecords": 100,
+                "defaultScanLimitGbytes": 500,
+                "maxResultMegaBytes": 1,
+                "defaultSamplingRatio": 10,
+                "enableSampling": false
+            },
+            "davis": {"enabled": false, "davisVisualization": {"isAvailable": true}}
+        },
+        "18": {
+            "title": "SLI: Conversation Success Rate (Target: >99%)",
+            "type": "data",
+            "query": "fetch logs\n| filter data.data.type == \"message\" and isNotNull(data.data.model)\n| summarize total_messages = count(), success_messages = countIf(data.data.stop_reason != \"error\")\n| fieldsAdd success_rate_pct = round((success_messages / total_messages) * 100, decimals: 2)\n| fieldsAdd sli_status = if(success_rate_pct >= 99.0, \"✅ PASS\", else: \"⚠️ WARN\")",
+            "visualization": "singleValue",
+            "visualizationSettings": {
+                "singleValue": {
+                    "label": "Success Rate %",
+                    "isIconVisible": true,
+                    "prefixIcon": "CheckCircle"
+                },
+                "autoSelectVisualization": false,
+                "thresholds": [
+                    {
+                        "id": 1,
+                        "field": "success_rate_pct",
+                        "isEnabled": true,
+                        "rules": [
+                            {
+                                "id": 0,
+                                "color": {"Default": "#2f6862"},
+                                "comparator": "≥",
+                                "value": 99.0
+                            },
+                            {
+                                "id": 1,
+                                "color": {"Default": "#eea53c"},
+                                "comparator": "≥",
+                                "value": 95.0
+                            },
+                            {
+                                "id": 2,
+                                "color": {"Default": "#c62239"},
+                                "comparator": "<",
+                                "value": 95.0
+                            }
+                        ]
+                    }
+                ]
+            },
+            "querySettings": {
+                "maxResultRecords": 100,
+                "defaultScanLimitGbytes": 500,
+                "maxResultMegaBytes": 1,
+                "defaultSamplingRatio": 10,
+                "enableSampling": false
+            },
+            "davis": {"enabled": false, "davisVisualization": {"isAvailable": true}}
+        },
+        "19": {
+            "title": "SLI: Token Error Rate (Target: 0%)",
+            "type": "data",
+            "query": "fetch logs\n| filter namespace == \"mcp_agent.mcp.mcp_aggregator.ChatAgent\" and message == \"Requesting tool call\"\n| summarize total_calls = count(), token_errors = countIf(matchesPhrase(data.data.error_message, \"token\"))\n| fieldsAdd token_error_rate_pct = round((token_errors / total_calls) * 100, decimals: 2)\n| fieldsAdd sli_status = if(token_error_rate_pct == 0, \"✅ IDEAL\", else: if(token_error_rate_pct <= 0.5, \"⚠️ WARN\", else: \"❌ CRITICAL\"))",
+            "visualization": "singleValue",
+            "visualizationSettings": {
+                "singleValue": {
+                    "label": "Token Errors %",
+                    "isIconVisible": true
+                },
+                "autoSelectVisualization": false,
+                "thresholds": [
+                    {
+                        "id": 1,
+                        "field": "token_error_rate_pct",
+                        "isEnabled": true,
+                        "rules": [
+                            {
+                                "id": 0,
+                                "color": {"Default": "#2f6862"},
+                                "comparator": "==",
+                                "value": 0
+                            },
+                            {
+                                "id": 1,
+                                "color": {"Default": "#eea53c"},
+                                "comparator": "≤",
+                                "value": 0.5
+                            },
+                            {
+                                "id": 2,
+                                "color": {"Default": "#c62239"},
+                                "comparator": ">",
+                                "value": 0.5
+                            }
+                        ]
+                    }
+                ]
+            },
+            "querySettings": {
+                "maxResultRecords": 100,
+                "defaultScanLimitGbytes": 500,
+                "maxResultMegaBytes": 1,
+                "defaultSamplingRatio": 10,
+                "enableSampling": false
+            },
+            "davis": {"enabled": false, "davisVisualization": {"isAvailable": true}}
+        },
+        "20": {
+            "title": "Error Budget Status (30-Day Window)",
+            "type": "data",
+            "query": "fetch logs\n| filter data.data.type == \"message\"\n| summarize total_messages = count(), error_messages = countIf(data.data.stop_reason == \"error\")\n| fieldsAdd error_rate_pct = round((error_messages / total_messages) * 100, decimals: 2)\n| fieldsAdd budget_consumed_pct = error_rate_pct, budget_remaining_pct = round(100 - error_rate_pct, decimals: 1)",
+            "visualization": "table",
+            "visualizationSettings": {
+                "table": {
+                    "columnOrder": [
+                        "[\"error_rate_pct\"]",
+                        "[\"budget_consumed_pct\"]",
+                        "[\"budget_available\"]",
+                        "[\"days_until_exhausted\"]"
+                    ]
+                },
+                "autoSelectVisualization": true,
+                "thresholds": [
+                    {
+                        "id": 1,
+                        "field": "budget_consumed_pct",
+                        "isEnabled": true,
+                        "rules": [
+                            {
+                                "id": 0,
+                                "color": {"Default": "#2f6862"},
+                                "comparator": "≤",
+                                "value": 10
+                            },
+                            {
+                                "id": 1,
+                                "color": {"Default": "#eea53c"},
+                                "comparator": "≤",
+                                "value": 50
+                            },
+                            {
+                                "id": 2,
+                                "color": {"Default": "#c62239"},
+                                "comparator": ">",
+                                "value": 50
+                            }
+                        ]
+                    }
+                ]
+            },
+            "querySettings": {
+                "maxResultRecords": 100,
+                "defaultScanLimitGbytes": 500,
+                "maxResultMegaBytes": 1,
+                "defaultSamplingRatio": 10,
+                "enableSampling": false
+            },
+            "davis": {"enabled": false, "davisVisualization": {"isAvailable": true}}
+        },
+        "21": {
+            "title": "RUM Correlation: Request Sessions by Conversation Quality",
+            "type": "data",
+            "query": "fetch logs\n| filter data.data.type == \"message\" and isNotNull(data.data._request_id)\n| summarize total_messages = count(), errors = countIf(data.data.stop_reason == \"error\"), avg_input_tokens = round(avg(toLong(data.data.usage.input_tokens)), decimals: 0), avg_output_tokens = round(avg(toLong(data.data.usage.output_tokens)), decimals: 0), by:{data.data._request_id}\n| fieldsAdd quality_score = round(((total_messages - errors) / total_messages) * 100, decimals: 1)\n| sort quality_score desc\n| limit 20",
+            "visualization": "table",
+            "visualizationSettings": {
+                "table": {
+                    "columnOrder": [
+                        "[\"data.data.user_id\"]",
+                        "[\"user_quality.total_messages\"]",
+                        "[\"user_quality.errors\"]",
+                        "[\"user_quality.avg_tokens\"]",
+                        "[\"quality_score\"]"
+                    ]
+                },
+                "autoSelectVisualization": true,
+                "thresholds": [
+                    {
+                        "id": 1,
+                        "field": "quality_score",
+                        "isEnabled": true,
+                        "rules": [
+                            {
+                                "id": 0,
+                                "color": {"Default": "#2f6862"},
+                                "comparator": "≥",
+                                "value": 95
+                            },
+                            {
+                                "id": 1,
+                                "color": {"Default": "#eea53c"},
+                                "comparator": "≥",
+                                "value": 85
+                            },
+                            {
+                                "id": 2,
+                                "color": {"Default": "#c62239"},
+                                "comparator": "<",
+                                "value": 85
+                            }
+                        ]
+                    }
+                ]
+            },
+            "querySettings": {
+                "maxResultRecords": 100,
+                "defaultScanLimitGbytes": 500,
+                "maxResultMegaBytes": 1,
+                "defaultSamplingRatio": 10,
+                "enableSampling": false
+            },
+            "davis": {"enabled": false, "davisVisualization": {"isAvailable": true}}
+        }
+    },
+    "layouts": {
+        "0": {
+            "x": 0,
+            "y": 5,
+            "w": 24,
+            "h": 6
+        },
+        "1": {
+            "x": 12,
+            "y": 11,
+            "w": 5,
+            "h": 2
+        },
+        "3": {
+            "x": 17,
+            "y": 11,
+            "w": 6,
+            "h": 2
+        },
+        "4": {
+            "x": 0,
+            "y": 11,
+            "w": 6,
+            "h": 2
+        },
+        "6": {
+            "x": 0,
+            "y": 0,
+            "w": 3,
+            "h": 4
+        },
+        "7": {
+            "x": 4,
+            "y": 0,
+            "w": 14,
+            "h": 5
+        },
+        "8": {
+            "x": 6,
+            "y": 11,
+            "w": 6,
+            "h": 2
+        },
+        "9": {
+            "x": 18,
+            "y": 13,
+            "w": 5,
+            "h": 4
+        },
+        "10": {
+            "x": 0,
+            "y": 13,
+            "w": 18,
+            "h": 4
+        },
+        "11": {
+            "x": 0,
+            "y": 17,
+            "w": 12,
+            "h": 4
+        },
+        "12": {
+            "x": 12,
+            "y": 17,
+            "w": 12,
+            "h": 4
+        },
+        "13": {
+            "x": 0,
+            "y": 21,
+            "w": 12,
+            "h": 4
+        },
+        "14": {
+            "x": 12,
+            "y": 21,
+            "w": 12,
+            "h": 4
+        },
+        "15": {
+            "x": 0,
+            "y": 25,
+            "w": 24,
+            "h": 4
+        },
+        "16": {
+            "x": 0,
+            "y": 29,
+            "w": 12,
+            "h": 3
+        },
+        "17": {
+            "x": 12,
+            "y": 29,
+            "w": 4,
+            "h": 3
+        },
+        "18": {
+            "x": 16,
+            "y": 29,
+            "w": 4,
+            "h": 3
+        },
+        "19": {
+            "x": 20,
+            "y": 29,
+            "w": 4,
+            "h": 3
+        },
+        "20": {
+            "x": 0,
+            "y": 32,
+            "w": 12,
+            "h": 4
+        },
+        "21": {
+            "x": 12,
+            "y": 32,
+            "w": 12,
+            "h": 4
+        }
+    },
+    "importedWithCode": false,
+    "settings": {},
+    "annotations": []
+}

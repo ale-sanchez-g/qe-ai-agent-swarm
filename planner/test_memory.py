@@ -45,12 +45,12 @@ def test_memory_management():
         print(f"Full context length: {len(full_context)} characters")
         
         # Check if the first message is preserved in smart windowing
-        if len(memory.memory.chat_memory.messages) > 10:
+        if len(memory.messages) > 10:
             first_msg_in_smart = recent_smart[0].content == conversations[0][0]
             print(f"First message preserved in smart windowing: {first_msg_in_smart}")
     
     print("\n--- Final Test Results ---")
-    print(f"Total messages in memory: {len(memory.memory.chat_memory.messages)}")
+    print(f"Total messages in memory: {len(memory.messages)}")
     print(f"Smart windowing preserves context: {len(memory.get_recent_messages_smart(10))}")
     print(f"Full context available: {len(memory.get_full_conversation_context()) > 0}")
     

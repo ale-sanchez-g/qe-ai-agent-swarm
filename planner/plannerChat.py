@@ -9,9 +9,18 @@ import json
 import random
 import uuid
 import os
+import logging
 from typing import Dict, List
 from pathlib import Path
 import time
+from datetime import datetime
+
+# Configure structured logging for Dynatrace OTLP integration
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger("mcp_agent.planner_chat")
 
 # Load environment variables from .env file
 from dotenv import load_dotenv
@@ -32,20 +41,41 @@ from mcp_agent.workflows.llm.augmented_llm_anthropic import AnthropicAugmentedLL
 from long_term_memory import LongTermMemory
 
 # LangChain imports for message types
-from langchain.schema import HumanMessage
+from langchain_core.messages import HumanMessage
 
 # LaunchDarkly AI Config
 import ldclient
 from ldclient import Context
 from ldclient.config import Config
-from ldai.client import LDAIClient, AIConfig, ModelConfig, LDMessage, ProviderConfig
-from ldai.tracker import TokenUsage
+
+try:
+    from ldai.client import LDAIClient
+    try:
+        from ldai.client import AIConfig, ModelConfig, LDMessage, ProviderConfig
+    except ImportError:
+        from ldai.types import AIConfig, ModelConfig, LDMessage, ProviderConfig
+    try:
+        from ldai.tracker import TokenUsage
+    except ImportError:
+        TokenUsage = None
+    LDAI_AVAILABLE = True
+except ImportError:
+    LDAIClient = None
+    AIConfig = None
+    ModelConfig = None
+    LDMessage = None
+    ProviderConfig = None
+    TokenUsage = None
+    LDAI_AVAILABLE = False
 
 # Initialize LaunchDarkly client for AI integration
 # Get SDK key from env variable
 sdk_key = os.getenv("LAUNCHDARKLY_SDK_KEY")
-if not sdk_key:
-    print("Warning: LAUNCHDARKLY_SDK_KEY not found in environment variables")
+if not sdk_key or not LDAI_AVAILABLE:
+    if not sdk_key:
+        print("Warning: LAUNCHDARKLY_SDK_KEY not found in environment variables")
+    if not LDAI_AVAILABLE:
+        print("Warning: LaunchDarkly AI SDK not available in this environment")
     print("LaunchDarkly features will be disabled")
     ai_chat_config = None
     tracker = None
@@ -169,26 +199,60 @@ class ConnectionManager:
     def __init__(self):
         self.active_connections: List[WebSocket] = []
         self.connection_sessions: Dict[WebSocket, str] = {}
+        self.connection_users: Dict[WebSocket, str] = {}  # Track user_id per connection
+        self.connection_requests: Dict[WebSocket, str] = {}  # Track request_id per connection
         self.message_counts: Dict[str, int] = {}  # Track message count per session
 
     async def connect(self, websocket: WebSocket):
         """Accept a new WebSocket connection and assign a session ID."""
         await websocket.accept()
         self.active_connections.append(websocket)
-        # Create a unique session ID for this connection
+        # Create a unique session ID and user ID for this connection
         session_id = str(uuid.uuid4())
+        user_id = f"user_{random.randint(1, 20)}"  # Use same user list from LaunchDarkly config
+        request_id = str(uuid.uuid4())
+        
         self.connection_sessions[websocket] = session_id
+        self.connection_users[websocket] = user_id
+        self.connection_requests[websocket] = request_id
         self.message_counts[session_id] = 0  # Initialize message counter
+        
+        # Log connection
+        logger.info("WebSocket connection established", extra={
+            "data": {
+                "type": "connection_start",
+                "session_id": session_id,
+                "user_id": user_id,
+                "request_id": request_id,
+                "timestamp": datetime.now().isoformat()
+            }
+        })
 
     def disconnect(self, websocket: WebSocket):
         """Remove a WebSocket connection and clean up session data."""
+        session_id = self.connection_sessions.get(websocket)
+        user_id = self.connection_users.get(websocket)
+        
         if websocket in self.active_connections:
             self.active_connections.remove(websocket)
+        
         if websocket in self.connection_sessions:
-            session_id = self.connection_sessions[websocket]
-            # Optionally keep message count for session persistence
-            # Or remove it: del self.message_counts[session_id]
+            # Log disconnection
+            logger.info("WebSocket connection closed", extra={
+                "data": {
+                    "type": "connection_end",
+                    "session_id": session_id,
+                    "user_id": user_id,
+                    "messages_in_session": self.message_counts.get(session_id, 0),
+                    "timestamp": datetime.now().isoformat()
+                }
+            })
             del self.connection_sessions[websocket]
+        
+        if websocket in self.connection_users:
+            del self.connection_users[websocket]
+        if websocket in self.connection_requests:
+            del self.connection_requests[websocket]
 
     async def send_personal_message(self, message: str, websocket: WebSocket):
         """Send a message to a specific WebSocket connection."""
@@ -202,6 +266,14 @@ class ConnectionManager:
     def get_session_id(self, websocket: WebSocket) -> str:
         """Get the session ID associated with a WebSocket connection."""
         return self.connection_sessions.get(websocket, str(uuid.uuid4()))
+    
+    def get_user_id(self, websocket: WebSocket) -> str:
+        """Get the user ID associated with a WebSocket connection."""
+        return self.connection_users.get(websocket, "anonymous")
+    
+    def get_request_id(self, websocket: WebSocket) -> str:
+        """Get the request ID associated with a WebSocket connection."""
+        return self.connection_requests.get(websocket, str(uuid.uuid4()))
 
     def increment_message_count(self, session_id: str) -> int:
         """Increment and return the message count for a session"""
@@ -246,7 +318,7 @@ except Exception as e:
     ltm = None
     print(f"Long-term memory disabled: {e}")
 
-async def process_message(user_message: str, agent: Agent = None, websocket: WebSocket = None, session_id: str = None):
+async def process_message(user_message: str, agent: Agent = None, websocket: WebSocket = None, session_id: str = None, user_id: str = None, request_id: str = None):
     """
     Process a user message through the MCP agent and LLM with conversation memory.
     
@@ -255,15 +327,35 @@ async def process_message(user_message: str, agent: Agent = None, websocket: Web
         agent: Optional pre-initialized Agent instance
         websocket: WebSocket connection for real-time updates
         session_id: Session identifier for conversation context
+        user_id: User identifier for tracking
+        request_id: Request ID for distributed tracing
         
     Returns:
         str: The AI-generated response
     """
     
-    # Retrieve or create conversation memory for this session
-    conversation_memory = session_manager.get_or_create_session(session_id)
+    # Generate IDs if not provided
+    if not request_id:
+        request_id = str(uuid.uuid4())
+    if not user_id:
+        user_id = "anonymous"
     
-    # Don't add the user message directly; we'll record the full turn using save_context later
+    # Log user prompt at reception
+    logger.info("User prompt received", extra={
+        "data": {
+            "type": "user_prompt",
+            "content": user_message[:500],
+            "content_length": len(user_message),
+            "session_id": session_id,
+            "user_id": user_id,
+            "request_id": request_id,
+            "timestamp": datetime.now().isoformat()
+        }
+    })
+    
+    # Retrieve or create conversation memory for this session
+    conversation_memory = session_manager.get_or_create_session(session_id, user_id)
+    conversation_memory.set_user_context(user_id, request_id)
     
     # Initialize agent if not provided
     if not agent:
@@ -282,6 +374,19 @@ async def process_message(user_message: str, agent: Agent = None, websocket: Web
         tools_result = await agent.list_tools()
         available_tools = tools_result.model_dump() if tools_result else {}
         
+        # Log tool availability
+        tool_count = len(available_tools.get("tools", []))
+        logger.info("Tools available", extra={
+            "data": {
+                "type": "tools_available",
+                "tool_count": tool_count,
+                "session_id": session_id,
+                "user_id": user_id,
+                "request_id": request_id,
+                "timestamp": datetime.now().isoformat()
+            }
+        })
+        
         # Send status update via WebSocket
         if websocket:
             await manager.send_personal_message(
@@ -292,14 +397,14 @@ async def process_message(user_message: str, agent: Agent = None, websocket: Web
         # Connect to the LLM
         llm = await agent.attach_llm(AnthropicAugmentedLLM)
         
-        # Send processing status update (this will trigger robot animation)
+        # Send processing status update
         if websocket:
             await manager.send_personal_message(
                 json.dumps({"type": "system", "content": "🔍 Processing your request..."}),
                 websocket
             )
         
-        # Build conversation context from memory using improved context management
+        # Build conversation context from memory
         conversation_context = conversation_memory.get_full_conversation_context()
         
         # Retrieve long-term context (RAG) for this query
@@ -312,11 +417,33 @@ async def process_message(user_message: str, agent: Agent = None, websocket: Web
                     prefix = f"[{meta.get('type','memo')}] {meta.get('filename', meta.get('path',''))}".strip()
                     retrieved_snippets.append(f"{prefix}\n{h['text']}")
             except Exception as e:
+                logger.warning("LTM retrieval failed", extra={
+                    "data": {
+                        "type": "ltm_error",
+                        "error": str(e),
+                        "request_id": request_id,
+                        "timestamp": datetime.now().isoformat()
+                    }
+                })
                 print(f"[WARN] LTM retrieval failed: {e}")
+        
         retrieved_context = "\n\n---\n".join(retrieved_snippets[:5]) if retrieved_snippets else ""
+        
+        # Log RAG retrieval
+        logger.info("RAG context retrieved", extra={
+            "data": {
+                "type": "rag_retrieval",
+                "snippet_count": len(retrieved_snippets),
+                "context_length": len(retrieved_context),
+                "session_id": session_id,
+                "user_id": user_id,
+                "request_id": request_id,
+                "timestamp": datetime.now().isoformat()
+            }
+        })
 
         # Debug logging
-        print(f"[DEBUG] Session {session_id}: Processing message {len(conversation_memory.memory.chat_memory.messages)//2 + 1}")
+        print(f"[DEBUG] Session {session_id}: Processing message {len(conversation_memory.messages)//2 + 1}")
         print(f"[DEBUG] Context length: {len(conversation_context)} characters")
 
         # Get system prompt from LaunchDarkly or use default
@@ -327,6 +454,20 @@ async def process_message(user_message: str, agent: Agent = None, websocket: Web
         else:
             system_prompt = """ONLY RESPOND WITH `LET ME CONNECT YOU WITH A HUMAN`"""
             print("[DEBUG] Using default system prompt")
+        
+        # Log system prompt
+        logger.info("System prompt prepared", extra={
+            "data": {
+                "type": "system_prompt",
+                "system_prompt": system_prompt[:500],
+                "system_prompt_length": len(system_prompt),
+                "source": "launchdarkly" if ai_chat_config else "default",
+                "session_id": session_id,
+                "user_id": user_id,
+                "request_id": request_id,
+                "timestamp": datetime.now().isoformat()
+            }
+        })
 
         # Generate AI response with full context
         full_message = f"""
@@ -342,43 +483,91 @@ async def process_message(user_message: str, agent: Agent = None, websocket: Web
 
         {system_prompt}
         """
+        
+        # Log LLM request
+        logger.info("LLM request prepared", extra={
+            "data": {
+                "type": "llm_request",
+                "request_length": len(full_message),
+                "context_length": len(conversation_context),
+                "retrieved_context_length": len(retrieved_context),
+                "tool_count": len(available_tools.get("tools", [])),
+                "session_id": session_id,
+                "user_id": user_id,
+                "request_id": request_id,
+                "timestamp": datetime.now().isoformat()
+            }
+        })
 
         response = await llm.generate_str(message=full_message)
         
+        # Log LLM response
+        logger.info("LLM response generated", extra={
+            "data": {
+                "type": "llm_response",
+                "response_length": len(response),
+                "session_id": session_id,
+                "user_id": user_id,
+                "request_id": request_id,
+                "timestamp": datetime.now().isoformat()
+            }
+        })
+        
         # Track token usage if LaunchDarkly tracker is available
-        if tracker:
+        if tracker and TokenUsage:
             try:
                 # Create an instance of TokenUsage with actual values from the model generation
-                # Note: These values should ideally come from the LLM response metadata
-                # For now, we'll estimate based on message lengths (rough approximation)
-                input_tokens = len(full_message.split()) * 1.3  # Approximate tokens from words
-                output_tokens = len(response.split()) * 1.3     # Approximate tokens from words  
+                input_tokens = len(full_message.split()) * 1.3
+                output_tokens = len(response.split()) * 1.3
                 total_tokens = int(input_tokens + output_tokens)
                 
                 tokens = TokenUsage(total_tokens, int(input_tokens), int(output_tokens))
                 tracker.track_tokens(tokens)
                 
+                # Log token tracking
+                logger.info("Tokens tracked", extra={
+                    "data": {
+                        "type": "token_usage",
+                        "input_tokens": int(input_tokens),
+                        "output_tokens": int(output_tokens),
+                        "total_tokens": total_tokens,
+                        "session_id": session_id,
+                        "user_id": user_id,
+                        "request_id": request_id,
+                        "timestamp": datetime.now().isoformat()
+                    }
+                })
+                
                 print(f"[DEBUG] Token usage tracked - Input: {int(input_tokens)}, Output: {int(output_tokens)}, Total: {total_tokens}")
             except Exception as e:
                 print(f"Error tracking token usage: {e}")
+        elif tracker and not TokenUsage:
+            print("[WARN] TokenUsage not available; skipping token tracking")
         
         # Track the interaction if LaunchDarkly is available
         if tracker:
             try:
                 tracker.track_success()
-                # Or with additional metadata if supported
-                # tracker.track_success(metadata={"user_message_length": len(user_message)})
             except Exception as e:
                 print(f"Error tracking LaunchDarkly interaction: {e}")
 
         # Record the full turn to keep summary accurate and persist to SQLite
         try:
-            conversation_memory.record_turn(user_message, response)
+            conversation_memory.record_turn(user_message, response, user_id=user_id, request_id=request_id)
         except Exception as e:
-            # Fallback to legacy add_* if record_turn not available
+            logger.error("Failed to record turn", extra={
+                "data": {
+                    "type": "error",
+                    "error": str(e),
+                    "session_id": session_id,
+                    "user_id": user_id,
+                    "request_id": request_id,
+                    "timestamp": datetime.now().isoformat()
+                }
+            })
             try:
-                conversation_memory.add_user_message(user_message)
-                conversation_memory.add_ai_message(response)
+                conversation_memory.add_user_message(user_message, user_id=user_id, request_id=request_id)
+                conversation_memory.add_ai_message(response, request_id=request_id)
             except Exception as e2:
                 print(f"[ERROR] Failed to persist conversation turn: {e2}")
         
@@ -392,6 +581,18 @@ async def process_message(user_message: str, agent: Agent = None, websocket: Web
             f.write(f"## User Query\n{user_message}\n\n")
             f.write(f"## Response\n{response}")
 
+        # Log file saved
+        logger.info("Response file saved", extra={
+            "data": {
+                "type": "file_saved",
+                "filename": response_file.name,
+                "session_id": session_id,
+                "user_id": user_id,
+                "request_id": request_id,
+                "timestamp": datetime.now().isoformat()
+            }
+        })
+
         # Persist this turn in long-term memory
         if ltm:
             try:
@@ -400,11 +601,29 @@ async def process_message(user_message: str, agent: Agent = None, websocket: Web
                     metadatas=[{
                         "type": "dialogue",
                         "session_id": session_id,
+                        "user_id": user_id,
                         "created_at": int(time.time())
                     }],
                     ids=[f"turn::{session_id}::{uuid.uuid4()}"]
                 )
+                logger.info("LTM upserted", extra={
+                    "data": {
+                        "type": "ltm_upsert",
+                        "session_id": session_id,
+                        "user_id": user_id,
+                        "request_id": request_id,
+                        "timestamp": datetime.now().isoformat()
+                    }
+                })
             except Exception as e:
+                logger.warning("LTM upsert failed", extra={
+                    "data": {
+                        "type": "ltm_error",
+                        "error": str(e),
+                        "request_id": request_id,
+                        "timestamp": datetime.now().isoformat()
+                    }
+                })
                 print(f"[WARN] LTM upsert failed: {e}")
 
         return response
@@ -434,10 +653,15 @@ async def websocket_endpoint(websocket: WebSocket):
     and maintains conversation state for connected clients.
     """
     await manager.connect(websocket)
-    provided_session_id = websocket.query_params.get("session_id") if hasattr(websocket, "query_params") else None
-    session_id = provided_session_id or manager.get_session_id(websocket)
+    session_id = manager.get_session_id(websocket)
+    user_id = manager.get_user_id(websocket)
+    request_id = manager.get_request_id(websocket)
+    
     # Ensure mapping uses the chosen session_id
     manager.connection_sessions[websocket] = session_id
+    
+    # Initialize session in session_manager with user_id
+    session_manager.get_or_create_session(session_id, user_id)
     
     # Initialize agent for this session
     agent = None
@@ -459,8 +683,24 @@ async def websocket_endpoint(websocket: WebSocket):
             if json_data["action"] == "message":
                 user_message = json_data["content"]
                 
+                # Generate new request ID for this message
+                message_request_id = str(uuid.uuid4())
+                
                 # Increment message counter
                 message_count = manager.increment_message_count(session_id)
+                
+                # Log message received from client
+                logger.info("Message received from client", extra={
+                    "data": {
+                        "type": "message_received",
+                        "session_id": session_id,
+                        "user_id": user_id,
+                        "request_id": message_request_id,
+                        "message_number": message_count,
+                        "timestamp": datetime.now().isoformat()
+                    }
+                })
+                
                 print(f"[DEBUG] Session {session_id}: Message #{message_count} received")
                 
                 # Echo user message back to client for UI consistency
@@ -474,8 +714,15 @@ async def websocket_endpoint(websocket: WebSocket):
                 )
                 
                 try:
-                    # Process message with session context and agent
-                    response = await process_message(user_message, agent, websocket, session_id)
+                    # Process message with full session context and user tracking
+                    response = await process_message(
+                        user_message, 
+                        agent, 
+                        websocket, 
+                        session_id,
+                        user_id=user_id,
+                        request_id=message_request_id
+                    )
                     
                     # Send AI response back to client
                     await manager.send_personal_message(
@@ -487,12 +734,37 @@ async def websocket_endpoint(websocket: WebSocket):
                         websocket
                     )
                     
+                    # Log successful response
+                    logger.info("Response sent to client", extra={
+                        "data": {
+                            "type": "response_sent",
+                            "session_id": session_id,
+                            "user_id": user_id,
+                            "request_id": message_request_id,
+                            "message_number": message_count,
+                            "timestamp": datetime.now().isoformat()
+                        }
+                    })
+                    
                 except Exception as e:
                     # Handle processing errors gracefully
+                    error_msg = f"Error processing message: {str(e)}"
+                    
+                    logger.error("Message processing failed", extra={
+                        "data": {
+                            "type": "error",
+                            "session_id": session_id,
+                            "user_id": user_id,
+                            "request_id": message_request_id,
+                            "error": str(e),
+                            "timestamp": datetime.now().isoformat()
+                        }
+                    })
+                    
                     await manager.send_personal_message(
                         json.dumps({
                             "type": "system", 
-                            "content": f"Error processing message: {str(e)}",
+                            "content": error_msg,
                             "message_count": message_count
                         }),
                         websocket

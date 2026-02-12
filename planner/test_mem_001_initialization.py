@@ -11,16 +11,12 @@ This test validates that ConversationMemory initializes correctly with default p
 import sys
 import os
 import unittest
-from unittest.mock import patch, MagicMock
 from pathlib import Path
 
 # Add the planner directory to the Python path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from memory_manager import ConversationMemory
-from langchain.memory import ConversationSummaryBufferMemory
-from langchain_anthropic import ChatAnthropic
-from langchain_core.language_models.base import BaseLanguageModel
 
 class TestConversationMemoryInitialization(unittest.TestCase):
     """Test class for ConversationMemory initialization validation"""
@@ -46,26 +42,17 @@ class TestConversationMemoryInitialization(unittest.TestCase):
             except Exception as e:
                 print(f"Warning: Could not clean up test database: {e}")
     
-    @patch('memory_manager.ChatAnthropic')
-    def test_mem_001_conversation_memory_initialization_with_defaults(self, mock_chat_anthropic):
+    def test_mem_001_conversation_memory_initialization_with_defaults(self):
         """
         Test Case 1.1.1: ConversationMemory Initialization
         
         Test Steps:
-        1. Mock ChatAnthropic to avoid API calls during testing
-        2. Create ConversationMemory instance with test session ID and default max_token_limit
-        3. Validate object creation and attribute assignment
-        4. Verify LangChain memory initialization
-        5. Confirm Claude model configuration
+        1. Create ConversationMemory instance with test session ID and default max_token_limit
+        2. Validate object creation and attribute assignment
+        3. Verify memory storage initialization
         """
-        
-        # Step 1: Mock ChatAnthropic to avoid API calls
-        mock_llm = MagicMock(spec=BaseLanguageModel)
-        mock_llm.model_name = "claude-3-sonnet-20240229"
-        mock_chat_anthropic.return_value = mock_llm
-        
-        # Step 2: Create ConversationMemory instance with test parameters
-        print(f"Step 2: Creating ConversationMemory with session_id='{self.test_session_id}' and default max_token_limit")
+        # Step 1: Create ConversationMemory instance with test parameters
+        print(f"Step 1: Creating ConversationMemory with session_id='{self.test_session_id}' and default max_token_limit")
         
         try:
             conversation_memory = ConversationMemory(
@@ -95,30 +82,32 @@ class TestConversationMemoryInitialization(unittest.TestCase):
         )
         print(f"✅ Max token limit validated: {conversation_memory.max_token_limit}")
         
-        # Step 4: Verify LangChain memory initialization
-        print("Step 4: Validating LangChain memory initialization")
+        # Step 4: Verify memory storage initialization
+        print("Step 4: Validating memory storage initialization")
         
-        # Validation Point 3: Memory is instance of ConversationSummaryBufferMemory
-        self.assertIsInstance(
-            conversation_memory.memory,
-            ConversationSummaryBufferMemory,
-            f"Expected memory to be instance of ConversationSummaryBufferMemory, got {type(conversation_memory.memory)}"
-        )
-        print(f"✅ Memory type validated: {type(conversation_memory.memory).__name__}")
-        
-        # Verify memory configuration
-        self.assertEqual(
-            conversation_memory.memory.max_token_limit,
-            self.expected_max_token_limit,
-            f"Expected memory max_token_limit to be {self.expected_max_token_limit}, got {conversation_memory.memory.max_token_limit}"
-        )
-        print(f"✅ Memory max_token_limit validated: {conversation_memory.memory.max_token_limit}")
-        
+        # Validation Point 3: Messages list initialized
         self.assertTrue(
-            conversation_memory.memory.return_messages,
-            "Expected memory.return_messages to be True"
+            hasattr(conversation_memory, "messages"),
+            "Expected ConversationMemory to have 'messages' attribute"
         )
-        print(f"✅ Memory return_messages validated: {conversation_memory.memory.return_messages}")
+        self.assertEqual(
+            len(conversation_memory.messages),
+            0,
+            "Expected initial messages list to be empty"
+        )
+        print(f"✅ Messages list initialized: {len(conversation_memory.messages)} message(s)")
+        
+        # Validation Point 4: Summary buffer initialized
+        self.assertTrue(
+            hasattr(conversation_memory, "summary_buffer"),
+            "Expected ConversationMemory to have 'summary_buffer' attribute"
+        )
+        self.assertEqual(
+            conversation_memory.summary_buffer,
+            "",
+            "Expected summary_buffer to be empty"
+        )
+        print("✅ Summary buffer initialized")
         
         # Step 5: Confirm Claude model configuration
         print("Step 5: Validating Claude model configuration")
@@ -201,23 +190,17 @@ class TestConversationMemoryInitialization(unittest.TestCase):
             session_id=self.test_session_id
         )
         
-        # Validate memory buffer initialization
+        # Validate messages list initialization
         self.assertTrue(
-            hasattr(conversation_memory.memory, 'moving_summary_buffer'),
-            "Expected memory to have moving_summary_buffer attribute"
-        )
-        
-        # Validate chat memory initialization
-        self.assertTrue(
-            hasattr(conversation_memory.memory, 'chat_memory'),
-            "Expected memory to have chat_memory attribute"
+            hasattr(conversation_memory, 'messages'),
+            "Expected ConversationMemory to have messages attribute"
         )
         
         # Validate initial messages list is empty
         self.assertEqual(
-            len(conversation_memory.memory.chat_memory.messages),
+            len(conversation_memory.messages),
             0,
-            "Expected initial chat_memory messages to be empty"
+            "Expected initial messages list to be empty"
         )
         
         print("✅ All memory attributes initialized correctly")
