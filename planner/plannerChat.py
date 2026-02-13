@@ -32,23 +32,39 @@ from mcp_agent.workflows.llm.augmented_llm_anthropic import AnthropicAugmentedLL
 from long_term_memory import LongTermMemory
 
 # LangChain imports for message types
-from langchain.schema import HumanMessage
+from langchain_core.messages import HumanMessage
 
 # LaunchDarkly AI Config
 import ldclient
 from ldclient import Context
 from ldclient.config import Config
-from ldai.client import LDAIClient, AIConfig, ModelConfig, LDMessage, ProviderConfig
-from ldai.tracker import TokenUsage
+
+# Import LaunchDarkly AI SDK with version compatibility handling
+try:
+    from ldai.client import LDAIClient, AIConfig, ModelConfig, LDMessage, ProviderConfig
+    from ldai.tracker import TokenUsage
+except ImportError as e:
+    print(f"Warning: Could not import LaunchDarkly AI SDK components: {e}")
+    print("Falling back to LaunchDarkly without AI Config support")
+    LDAIClient = None
+    AIConfig = None
+    ModelConfig = None
+    LDMessage = None
+    ProviderConfig = None
+    TokenUsage = None
 
 # Initialize LaunchDarkly client for AI integration
 # Get SDK key from env variable
 sdk_key = os.getenv("LAUNCHDARKLY_SDK_KEY")
+ai_chat_config = None
+tracker = None
+
 if not sdk_key:
     print("Warning: LAUNCHDARKLY_SDK_KEY not found in environment variables")
     print("LaunchDarkly features will be disabled")
-    ai_chat_config = None
-    tracker = None
+elif not LDAIClient:  # Check if SDK components were imported successfully
+    print("Warning: LaunchDarkly AI SDK components not available")
+    print("LaunchDarkly features will be disabled")
 else:
     try:
         ldclient.set_config(Config(sdk_key))
@@ -260,27 +276,20 @@ async def process_message(user_message: str, agent: Agent = None, websocket: Web
         str: The AI-generated response
     """
     
+    print(f"[DEBUG] process_message called for session {session_id}, agent={'provided' if agent else 'None'}")
+    
     # Retrieve or create conversation memory for this session
     conversation_memory = session_manager.get_or_create_session(session_id)
     
     # Don't add the user message directly; we'll record the full turn using save_context later
     
-    # Initialize agent if not provided
-    if not agent:
-        async with mcp_app.run() as agent_app:
-            agent = Agent(
-                name="ChatAgent",
-                instruction="""You are an AI assistant that helps with research and analysis using available tools.
-                               Answer user queries using the provided context and tools.
-                               Be concise, helpful and accurate.
-                               """,
-                server_names=["mcp-atlassian", "fetch"]
-            )
-    
-    async with agent:
+    # Define the core processing logic
+    async def _process_with_agent(agent_instance):
+        print(f"[DEBUG] _process_with_agent called for session {session_id}")
         # Get available tools for context
-        tools_result = await agent.list_tools()
+        tools_result = await agent_instance.list_tools()
         available_tools = tools_result.model_dump() if tools_result else {}
+        print(f"[DEBUG] Got {len(available_tools.get('tools', []))} tools for session {session_id}")
         
         # Send status update via WebSocket
         if websocket:
@@ -290,7 +299,9 @@ async def process_message(user_message: str, agent: Agent = None, websocket: Web
             )
         
         # Connect to the LLM
-        llm = await agent.attach_llm(AnthropicAugmentedLLM)
+        print(f"[DEBUG] Attaching LLM for session {session_id}")
+        llm = await agent_instance.attach_llm(AnthropicAugmentedLLM)
+        print(f"[DEBUG] LLM attached for session {session_id}")
         
         # Send processing status update (this will trigger robot animation)
         if websocket:
@@ -300,7 +311,7 @@ async def process_message(user_message: str, agent: Agent = None, websocket: Web
             )
         
         # Build conversation context from memory using improved context management
-        conversation_context = conversation_memory.get_full_conversation_context()
+        conversation_context = conversation_memory.get_conversation_context()
         
         # Retrieve long-term context (RAG) for this query
         retrieved_snippets = []
@@ -316,7 +327,7 @@ async def process_message(user_message: str, agent: Agent = None, websocket: Web
         retrieved_context = "\n\n---\n".join(retrieved_snippets[:5]) if retrieved_snippets else ""
 
         # Debug logging
-        print(f"[DEBUG] Session {session_id}: Processing message {len(conversation_memory.memory.chat_memory.messages)//2 + 1}")
+        print(f"[DEBUG] Session {session_id}: Processing message #{len(conversation_memory.messages)//2 + 1}")
         print(f"[DEBUG] Context length: {len(conversation_context)} characters")
 
         # Get system prompt from LaunchDarkly or use default
@@ -343,7 +354,9 @@ async def process_message(user_message: str, agent: Agent = None, websocket: Web
         {system_prompt}
         """
 
+        print(f"[DEBUG] Calling LLM generate_str for session {session_id}")
         response = await llm.generate_str(message=full_message)
+        print(f"[DEBUG] LLM response received for session {session_id}, length: {len(response)}")
         
         # Track token usage if LaunchDarkly tracker is available
         if tracker:
@@ -408,6 +421,26 @@ async def process_message(user_message: str, agent: Agent = None, websocket: Web
                 print(f"[WARN] LTM upsert failed: {e}")
 
         return response
+    
+    # If agent is provided (from websocket endpoint), use it directly (already in context)
+    if agent:
+        print(f"[DEBUG] Using provided agent for session {session_id}")
+        return await _process_with_agent(agent)
+    
+    # Otherwise, create and manage agent locally
+    else:
+        print(f"[DEBUG] Creating new agent context for session {session_id}")
+        async with mcp_app.run() as agent_app:
+            agent_instance = Agent(
+                name="ChatAgent",
+                instruction="""You are an AI assistant that helps with research and analysis using available tools.
+                               Answer user queries using the provided context and tools.
+                               Be concise, helpful and accurate.
+                               """,
+                server_names=["mcp-atlassian", "fetch"]
+            )
+            async with agent_instance:
+                return await _process_with_agent(agent_instance)
 
 # FastAPI Route Handlers
 
@@ -439,67 +472,91 @@ async def websocket_endpoint(websocket: WebSocket):
     # Ensure mapping uses the chosen session_id
     manager.connection_sessions[websocket] = session_id
     
-    # Initialize agent for this session
-    agent = None
-    async with mcp_app.run() as agent_app:
-        agent = Agent(
-            name="ChatAgent",
-            instruction="""You are an AI assistant that helps with research and analysis using available tools.
-                          Answer user queries using the provided context and tools.
-                          Be concise, helpful and accurate.""",
-            server_names=["mcp-atlassian", "filesystem", "fetch"]
-        )
+    print(f"[DEBUG] WebSocket connected for session {session_id}")
     
     try:
-        while True:
-            # Receive message from client
-            data = await websocket.receive_text()
-            json_data = json.loads(data)
+        # Initialize agent for this session and keep it alive for the entire websocket connection
+        print(f"[DEBUG] Starting MCP app for session {session_id}")
+        async with mcp_app.run() as agent_app:
+            print(f"[DEBUG] MCP app started, creating agent for session {session_id}")
+            agent = Agent(
+                name="ChatAgent",
+                instruction="""You are an AI assistant that helps with research and analysis using available tools.
+                              Answer user queries using the provided context and tools.
+                              Be concise, helpful and accurate.""",
+                server_names=["mcp-atlassian", "filesystem", "fetch"]
+            )
             
-            if json_data["action"] == "message":
-                user_message = json_data["content"]
-                
-                # Increment message counter
-                message_count = manager.increment_message_count(session_id)
-                print(f"[DEBUG] Session {session_id}: Message #{message_count} received")
-                
-                # Echo user message back to client for UI consistency
-                await manager.send_personal_message(
-                    json.dumps({
-                        "type": "user", 
-                        "content": user_message,
-                        "message_count": message_count
-                    }),
-                    websocket
-                )
-                
+            print(f"[DEBUG] Agent created, entering agent context for session {session_id}")
+            async with agent:
+                print(f"[DEBUG] Agent context entered, ready for messages in session {session_id}")
                 try:
-                    # Process message with session context and agent
-                    response = await process_message(user_message, agent, websocket, session_id)
-                    
-                    # Send AI response back to client
-                    await manager.send_personal_message(
-                        json.dumps({
-                            "type": "bot", 
-                            "content": response,
-                            "message_count": message_count
-                        }),
-                        websocket
-                    )
-                    
+                    while True:
+                        # Receive message from client
+                        print(f"[DEBUG] Waiting for message in session {session_id}")
+                        data = await websocket.receive_text()
+                        json_data = json.loads(data)
+                        
+                        if json_data["action"] == "message":
+                            user_message = json_data["content"]
+                            
+                            # Increment message counter
+                            message_count = manager.increment_message_count(session_id)
+                            print(f"[DEBUG] Session {session_id}: Message #{message_count} received: {user_message[:50]}...")
+                            
+                            # Echo user message back to client for UI consistency
+                            await manager.send_personal_message(
+                                json.dumps({
+                                    "type": "user", 
+                                    "content": user_message,
+                                    "message_count": message_count
+                                }),
+                                websocket
+                            )
+                            
+                            try:
+                                # Process message with session context and agent
+                                print(f"[DEBUG] Processing message in session {session_id}")
+                                response = await process_message(user_message, agent, websocket, session_id)
+                                print(f"[DEBUG] Message processed in session {session_id}, sending response")
+                                
+                                # Send AI response back to client
+                                await manager.send_personal_message(
+                                    json.dumps({
+                                        "type": "bot", 
+                                        "content": response,
+                                        "message_count": message_count
+                                    }),
+                                    websocket
+                                )
+                                print(f"[DEBUG] Response sent in session {session_id}")
+                                
+                            except Exception as e:
+                                # Handle processing errors gracefully
+                                print(f"[ERROR] Error processing message in session {session_id}: {e}")
+                                import traceback
+                                traceback.print_exc()
+                                await manager.send_personal_message(
+                                    json.dumps({
+                                        "type": "system", 
+                                        "content": f"Error processing message: {str(e)}",
+                                        "message_count": message_count
+                                    }),
+                                    websocket
+                                )
+                
+                except WebSocketDisconnect:
+                    print(f"[DEBUG] WebSocket disconnected for session {session_id}")
+                    manager.disconnect(websocket)
                 except Exception as e:
-                    # Handle processing errors gracefully
-                    await manager.send_personal_message(
-                        json.dumps({
-                            "type": "system", 
-                            "content": f"Error processing message: {str(e)}",
-                            "message_count": message_count
-                        }),
-                        websocket
-                    )
-    
-    except WebSocketDisconnect:
-        # Clean up when client disconnects
+                    print(f"[ERROR] Unexpected error in websocket loop for session {session_id}: {e}")
+                    import traceback
+                    traceback.print_exc()
+                    manager.disconnect(websocket)
+    except Exception as e:
+        print(f"[ERROR] Error in websocket endpoint for session {session_id}: {e}")
+        import traceback
+        traceback.print_exc()
         manager.disconnect(websocket)
 
 # File Management Endpoints
@@ -630,17 +687,11 @@ async def get_session_history(session_id: str):
     """
     if session_id in session_manager.sessions:
         memory = session_manager.sessions[session_id]
-        messages = memory.get_recent_messages_smart(50)  # Last 50 messages with smart windowing
+        messages = memory.get_recent_messages(50)  # Last 50 messages
         return {
             "session_id": session_id,
-            "conversation_context": memory.get_full_conversation_context(),
-            "messages": [
-                {
-                    "type": "human" if isinstance(msg, HumanMessage) else "ai",
-                    "content": msg.content
-                }
-                for msg in messages
-            ]
+            "conversation_context": memory.get_conversation_context(),
+            "messages": messages
         }
     return {"error": "Session not found"}
 

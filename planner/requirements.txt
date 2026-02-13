@@ -5,7 +5,7 @@ uvicorn
 websockets
 python-multipart
 jinja2
-langchain
+langchain-core
 langchain-anthropic
 langchain-community
 redis
@@ -15,5 +15,5 @@ chromadb
 dotenv
 sentence-transformers
 launchdarkly-server-sdk
-launchdarkly-server-sdk-ai
+launchdarkly-server-sdk-ai>=0.6.0,<1.0.0
 launchdarkly-observability
