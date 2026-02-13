@@ -36,28 +36,15 @@ from langchain_core.messages import HumanMessage
 
 # LaunchDarkly AI Config
 import ldclient
-from ldclient import Context
+from ldclient.context import Context
 from ldclient.config import Config
+from ldai.client import LDAIClient
+from ldai import AICompletionConfigDefault
 
-# Import LaunchDarkly AI SDK with version compatibility handling
-try:
-    from ldai.client import LDAIClient, AIConfig, ModelConfig, LDMessage, ProviderConfig
-    from ldai.tracker import TokenUsage
-except ImportError as e:
-    print(f"Warning: Could not import LaunchDarkly AI SDK components: {e}")
-    print("Falling back to LaunchDarkly without AI Config support")
-    LDAIClient = None
-    AIConfig = None
-    ModelConfig = None
-    LDMessage = None
-    ProviderConfig = None
-    TokenUsage = None
 
 # Initialize LaunchDarkly client for AI integration
 # Get SDK key from env variable
 sdk_key = os.getenv("LAUNCHDARKLY_SDK_KEY")
-ai_chat_config = None
-tracker = None
 
 if not sdk_key:
     print("Warning: LAUNCHDARKLY_SDK_KEY not found in environment variables")
@@ -86,19 +73,23 @@ else:
             .set("firstName", user_id) \
             .set("lastName", "Smith") \
             .build()
-
-        # Fall back to default configuration if needed
-        fallback_value = AIConfig(
-            enabled=True,
-            model=ModelConfig(
-                name="claude-3-5-haiku-20241022",
-                parameters={"temperature": 0.8},
-            ),
-            messages=[LDMessage(role="system", content="You are an AI assistant that helps with research and analysis using available tools. Answer user queries using the provided context and tools. Be concise, helpful and accurate.")],
-            provider=ProviderConfig(name="anthropic"),
+        
+        fallback_value = AICompletionConfigDefault(enabled=False)
+        completion_result = aiclient.completion_config(
+            'master-prompt',
+            context,
+            fallback_value,
+            {"example_custom_variable": "example_custom_value"}
         )
 
-        ai_chat_config, tracker = aiclient.config('master-prompt', context, fallback_value)
+        if isinstance(completion_result, tuple):
+            print("Received AI config and tracker from LaunchDarkly")
+            ai_chat_config, tracker = completion_result
+        else:
+            print("Received AI config from LaunchDarkly, but no tracker")
+            ai_chat_config = completion_result
+            tracker = None
+
         print(f"LaunchDarkly AI config retrieved: {ai_chat_config.enabled}")
         
         # Debug: Print the system message content
