@@ -28,4 +28,4 @@ mcp:
   
 
 anthropic:
-  default_model: "claude-3-5-haiku-20241022"
+  default_model: "claude-sonnet-4-5-20250929"
